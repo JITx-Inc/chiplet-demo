@@ -1,0 +1,27 @@
+#use-added-syntax(jitx)
+defpackage chiplet-rules :
+  import core
+  import collections
+  import jitx
+  import jitx/commands
+  
+public pcb-rules kyocera-build-up :
+  min-copper-width = 9.0e-3
+  min-copper-copper-space = 12.0e-3
+  min-copper-hole-space = 0.1524
+  min-copper-edge-space = 0.254
+  min-annular-ring = 22.5e-3
+  min-drill-diameter = 40.0e-3
+  min-silkscreen-width = 0.1016
+  min-pitch-leaded = 0.35
+  min-pitch-bga = 125.0e-3
+  max-board-width = 406.4
+  max-board-height = 558.8
+  min-silk-solder-mask-space = 0.127
+  min-silkscreen-text-height = 0.75
+  solder-mask-registration = 0.005
+  min-th-pad-expand-outer = 0.2032
+  min-soldermask-opening = 0.0010 ; solder bridge - solder mask opening/expansion DIAMETER
+  min-soldermask-bridge = 0.2 ; green
+  min-hole-to-hole = 0.5
+  min-pth-pin-solder-clearance = 3.0 ; TODO: lookup actual value

@@ -1,0 +1,109 @@
+#use-added-syntax(jitx)
+defpackage chiplet-demo :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/rules
+  import chiplet-utils
+  import chiplet-rules
+
+val board-shape = Rectangle(50.0, 50.0)
+val num-layers = 20
+substrate-routing-layers = 4
+substrate-pitch = 60.0e-3
+
+
+pcb-module chiplet-design :
+
+
+  ; inst tx-slice   : bunch-of-wires-slice(1000.0e-3, false)
+
+  ; inst rx-slice   : bunch-of-wires-slice(1000.0e-3, true)
+  ; inst tiny-slice : bunch-of-wires-slice(40.0e-3, false)
+
+  ; place(tx-slice)   at loc(-5.0, -20.0) on Top
+  ; place(rx-slice)   at loc(5.0,  -20.0) on Top
+  ; place(tiny-slice) at loc(12.0, -20.0) on Top
+
+  ; inst tx : bunch-of-wires-slice(130.0e-3, false)
+  ; inst rx : bunch-of-wires-slice(130.0e-3, true)
+
+  ; net (tx.BoW rx.BoW)
+
+  ; place(tx) at loc(0.0, -12.0) on Top
+  ; place(rx) at loc(0.0, -12.5, 180.0) on Top
+
+  ; inst rx-stack : bunch-of-wires-stack(4, 130.0e-3, true)
+  ; place(rx-stack) at loc(0.0, -10.0) on Top
+
+  val link = BoW-link(bit-width, tx-clk, max-edge-width, source-terminated?) where :
+    val bit-width = 128
+    val tx-clk = 200.0e6
+    val max-edge-width = 4.0
+    val source-terminated? = true
+  
+  inst chiplet : chiplet-system(link)
+  place(chiplet) at loc(0.0, 0.0) on Top
+
+  ; inst chiplet-link : bunch-of-wires-link-bumps(optimize-link-parameters(link), true)
+  ; inst io-link : bunch-of-wires-link-bumps(optimize-link-parameters(link), false)
+
+  ; connect-bunch-of-wires(chiplet-link.io io-link.io)
+  ; place(chiplet-link) at loc(0.0, 0.0) on Top
+  ; place(io-link) at loc(0.0, -0.5, 180.0) on Top
+
+  ; inst ayar-link  : bunch-of-wires-link-bumps(16, 8,  4, 100.0e-3, true)
+  ; inst intel-link : bunch-of-wires-link-bumps(8,  16, 4, 130.0e-3, false)
+
+  ; place(ayar-link)  at loc(0.0, 0.0) on Top
+  ; place(intel-link) at loc(0.0, -2.0, 180.0) on Top
+
+  ; connect-bunch-of-wires(ayar-link.io intel-link.io)
+
+; ==========================================
+; Configure the design, then run or check it
+; ==========================================
+defn run-design (circuit:Instantiable, run-checks?:True|False) :
+  set-design-directory("chiplet-output")
+  set-board(ocdb/defaults/default-board(num-layers, board-shape))
+  set-rules(kyocera-build-up)
+
+  var main-module = circuit
+  if run-checks? :
+    main-module = ocdb/generator-utils/run-final-passes(circuit) ; Analyze design with a pass
+  
+  set-main-module(main-module) ; Treat the provided module as a design, and compile it.
+  
+  if run-checks? :
+    run-checks("checks.txt")
+  else:  
+    view-board()
+    ; view-schematic()
+
+; ====================================
+; Compile the design, view the results
+; ====================================
+defn compile-design (circuit:Instantiable) :
+  run-design(circuit, false)
+
+; =====================
+; Run the design checks
+; =====================
+defn check-design (circuit:Instantiable) :
+  run-design(circuit, true)
+
+; ============
+; Run the code
+; ============
+compile-design(chiplet-design)

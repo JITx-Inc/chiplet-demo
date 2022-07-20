@@ -1,0 +1,3 @@
+include "open-components-database/stanza.proj"
+package chiplet-utils defined-in "chiplet-utils.stanza"
+package chiplet-rules defined-in "chiplet-rules.stanza"
