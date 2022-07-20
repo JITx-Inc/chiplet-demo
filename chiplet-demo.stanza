@@ -88,8 +88,18 @@ defn run-design (circuit:Instantiable, run-checks?:True|False) :
   if run-checks? :
     run-checks("checks.txt")
   else:  
-    view-board()
+    ; view-board()
     ; view-schematic()
+    export-design()
+
+; code to add
+; ====================
+; Export design to CAD
+; ====================
+defn export-design () :
+  set-paper(ANSI-A4)
+  set-export-backend(`kicad)
+  export-cad()
 
 ; ====================================
 ; Compile the design, view the results
