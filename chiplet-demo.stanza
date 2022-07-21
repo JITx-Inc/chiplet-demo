@@ -15,8 +15,12 @@ defpackage chiplet-demo :
   import ocdb/box-symbol
   import ocdb/symbols
   import ocdb/rules
+  import utils/time
+
   import chiplet-utils
   import chiplet-rules
+
+; enable-spy()
 
 val board-shape = Rectangle(50.0, 50.0)
 val num-layers = 20
@@ -116,4 +120,8 @@ defn check-design (circuit:Instantiable) :
 ; ============
 ; Run the code
 ; ============
+println $ get-time-string("%H:%M:%S")
+
 compile-design(chiplet-design)
+
+println $ get-time-string("%H:%M:%S")
