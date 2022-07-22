@@ -3,11 +3,12 @@
 # Designs
 | Design Name                   | Design Description               | Concept Used |
 |-------------------------------|--------------------------------- |--------------------    |
-| `ble-mote.stanza`             | Wireless sensor node: ESP32 + sensors | require stmts, placed components, copper pours |
+| `ble-mote.stanza`             | Wireless sensor node: ESP32 + sensors | require stmts, bundles, placed components, copper pours |
+| `can-stm32.stanza`            | CAN bus connector with STM32 | require stmts, bundles |                            |
 | `class-a.stanza`              | Simple class A bipolar amp | |                            |
 | `design-template.stanza`      | Design template for new projects |
 | `doc-examples.stanza`         | Component search | component search |
-| `ethernet-fmc.stanza`         | FPGA + ethernet connector with LVDS | require stmts |
+| `ethernet-fmc.stanza`         | FPGA + ethernet connector with LVDS | require stmts, bundles |
 | `grid-resistors.stanza`       | Simple programmatic resistor implementation | |
 | `lp-examples.stanza`          | Standard 2 pin land pattern exploration | |
 | `mcu.stanza`                  | STM32 microcontroller implementation | component search |
