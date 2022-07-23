@@ -13,6 +13,7 @@
 | `lp-examples.stanza`          | Standard 2 pin land pattern exploration | |
 | `mcu.stanza`                  | STM32 microcontroller implementation | component search |
 | `power-monitor.stanza`        | FPGA with LVDS connections + power monitor | bus termination |
+| `power-state-demo.stanza`     | simple example of using power state properties | design properties |
 | `smd-landpatterns.stanza`     | Intro to soldermask defined BGA land patterns ||
 | `test-component-checks.stanza`| Intro to component creation and usage | component creation |
 | `tutorial.stanza`             | Tutorial code (from quickstart guides) | |
