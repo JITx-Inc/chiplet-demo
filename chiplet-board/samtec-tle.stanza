@@ -1,0 +1,56 @@
+#use-added-syntax(jitx)
+defpackage samtec-tle :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import utils/time
+
+public pcb-landpattern samtec-tle-lp (n-row:Int):
+
+  val n-col = 2
+  val n-rf = to-double(n-row)
+  val row-pitch = 6.55 - 1.685
+  val pin-pitch = 2.0
+
+  val l0 = loc((to-double(n-col - 1) * row-pitch) / -2.0, (to-double(n-row - 1) * pin-pitch) / 2.0)
+  
+  for i in 0 to n-row do :
+    for j in 0 to n-col do :
+      pad p[n-col * i + j + 1] : smd-pad(1.685, 1.1) at l0 * loc(to-double(j) * row-pitch, (- to-double(i) * pin-pitch))
+
+  layer(Cutout()) = Union(
+    [symmetric-about-y(
+      [Circle(0.0, (pin-pitch * (to-double(n-row) - 2.0)) / 2.0, 0.76 / 2.0)]) 
+      Circle(0.38) * grid-locs(n-row, 2, pin-pitch, pin-pitch)])
+
+  layer(Courtyard(Top)) = Rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  layer(Silkscreen("F-SilkS", Top)) = LineRectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  layer(Courtyard(Bottom)) = Rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  ref-label()
+
+public pcb-component samtec-tle (n-row:Int) :
+  port p : pin[n-row * 2]
+
+  manufacturer = "Samtec"
+  mpn = to-string("TLE-1%_-01-G-DV-A" % [n-row])
+
+  pin-properties :
+    [pin:Ref     | pads:Int ...   | side:Dir]
+    for i in 0 through n-row * 2 do :
+      [p[i + 1] | i + 1 | if i % 2 == 0 : Left else : Right]
+
+  assign-landpattern(samtec-tle-lp(n-row))
+
+  make-box-symbol()
+  reference-prefix = "J"

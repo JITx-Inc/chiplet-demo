@@ -1,0 +1,3 @@
+include "../open-components-database/stanza.proj"
+
+package molex-mini-fit-jr defined-in "molex-mini-fit-jr.stanza"

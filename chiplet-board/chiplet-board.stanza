@@ -1,0 +1,1482 @@
+defpackage chips-generator :
+  import core
+  import collections
+  import math
+  import interfaces
+  import components
+  import modules
+  import stackups
+  import fonts
+  import rules
+  import peripherals
+  import footprints
+  import symbols
+  import parts
+  import power-system-gen
+  import powergen
+
+;Need to import pads to package, wrap in component, add to module with named
+;nets assigned to ports and connectors
+
+pcb-bundle pmb :
+  pin clk
+  pin dat
+
+pcb-bundle chips-bank :
+  pin AIB_A_CONFIG_DONE
+  pin AIB_A_TEST_IN
+  pin AIB_A_TEST_OUT
+  pin AIB_B_CONFIG_DONE
+  pin AIB_B_TEST_IN
+  pin AIB_B_TEST_OUT
+  pin LVDS_REXT
+  pin OSC_A_DIV_CLK
+  pin OSC_B_DIV_CLK
+  pin RESET_N
+  pin SYS_CLK
+
+;==== Parts ===================================================================
+
+pcb-part SN74AVC4T774RGYR-prt :
+  manufacturer = "Texas Instruments"
+  mpn = " SN74AVC4T774RGYR"
+  package = SN74AVC4T774RGYR-pkg
+  ; description = "IC TRNSLTR BIDIRECTIONAL 16VQFN"
+
+pcb-part te-rcu-0c-prt :
+  manufacturer = "TE Connectivity"
+  mpn = "RCU-0C"
+  package = te-RCU-0C-pkg
+
+pcb-part ti-SN74LVC1G125-prt :
+  manufacturer = "Texas Instruments"
+  mpn = "SN74LVC1G125DBVR"
+  package = SOT23-5N
+
+pcb-part samtec-clt-prt (n-row:Int) :
+  manufacturer = "Samtec"
+  mpn = to-string("CLT-1%_-02-H-D-BE-A" % [n-row])
+  package = {samtec-clt-pkg(n-row)}
+
+pcb-part samtec-tle-prt (n-row:Int) :
+  manufacturer = "Samtec"
+  mpn = to-string("TLE-1%_-01-G-DV-A" % [n-row])
+  package = {samtec-tle-pkg(n-row)}
+
+pcb-part ti-lmk01010-prt :
+  manufacturer = "Texas Instruments"
+  mpn = "LMK01010ISQE/NOPB"
+  package = QFN50P715X715X80-48
+
+pcb-part si-53342-prt :
+  manufacturer = "Silicon Labs"
+  mpn = "SI53342-B-GM"
+  package = QFN50P400X400X85-24
+
+pcb-part vishay-SMBJ3v3-prt :
+  manufacturer = "Vishay"
+  mpn = "SMBJ3V3-E3/52"
+  package = DIOM-4539X220
+
+pcb-part ti-TRS3122E-prt :
+  manufacturer = "Texas Instruments"
+  mpn = "TRS3122ERGER"
+  package = QFN50P410X410X100-24N
+
+pcb-part si-SiT8208-prt :
+  manufacturer = "SiTime"
+  mpn = "SiT8208AC-G1-18E-50.000000X"
+  package = si-SiT8208-pkg
+
+public pcb-part littelfuse-157-prt (i-hold:Double):
+  manufacturer = "Littelfuse"
+  val a-code = switch(i-hold) :
+    0.080 : ".080"
+    0.100 : ".100"
+    0.125 : ".125"
+    0.160 : ".160"
+    0.200 : ".200"
+    0.250 : ".250"
+    0.315 : ".315"
+    0.375 : ".375"
+    0.400 : ".400"
+    0.500 : ".500"
+    0.630 : ".630"
+    0.750 : ".750"
+    0.800 : ".800"
+    1.0 : "001."
+    1.25 : "1.25"
+    1.5 : "01.5"
+    1.6 : "01.6"
+    2.0 : "002."
+    2.5 : "02.5"
+    3.0 : "003."
+    3.15 : "3.15"
+    3.5 : "03.5"
+    4.0 : "004."
+    5.0 : "005."
+    6.3 : "06.3"
+    7.0 : "007."
+    8.0 : "008."
+    10.0 : "010."
+    else : fatal("Incorrect current rating for Littelfuse 157 %_" % [i-hold])
+  mpn = to-string("0157%_DR" % [a-code])
+  package = FUSC7330X390
+
+;==== Packages ===================================================================
+
+pcb-package SN74AVC4T774RGYR-pkg :
+  ; Can't use standard qfn generators for this one, it has skipped pins and nonstandard
+  ; numbering
+  pcb-pad paddle :
+    make-smd-pad(2.55, 2.05)
+  pad p[16] : paddle at loc(0.0, 0.0)
+  val pw = 0.28 ; pad width
+  val ph = 0.85 ; pad height
+  pcb-pad sidepad : 
+    make-smd-pad(ph, pw)
+  pcb-pad toppad :
+    make-smd-pad(pw, ph)
+  ; Do the pins at the ends first
+  pad p[00] : sidepad at loc(-1.975,-0.75)
+  pad p[07] : sidepad at loc( 1.975,-0.75)
+  pad p[08] : sidepad at loc( 1.975, 0.75)
+  pad p[15] : sidepad at loc(-1.975, 0.75)
+  ; Pins at the side
+  for i in 0 to 6 do:
+    pad p[i + 1] : toppad at loc(-1.25 + (0.5 * to-double(i)), -1.725)
+  for i in 0 to 6 do:
+    pad p[i + 9] : toppad at loc( 1.25 - (0.5 * to-double(i)),  1.725)
+  layer courtyard = rectangle(4.8, 4.3)
+  layer silkscreen(pol) = circle(-2.6, -0.75, 0.254)
+  ref-label()
+
+
+pcb-package si-SiT8208-pkg :
+  pcb-pad pin-pad :
+    make-smd-pad(1.1, 1.0)
+  val x = 1.9 / 2.0
+  val y = 1.5 / 2.0
+  pad p[0] : pin-pad at loc((- x), (- y))
+  pad p[1] : pin-pad at loc(x, (- y))
+  pad p[2] : pin-pad at loc(x, y)
+  pad p[3] : pin-pad at loc((- x), y)
+  layer courtyard = rectangle(2.7, 2.4)
+  layer silkscreen(f-silk) = line-rectangle(2.7, 2.4)
+  layer silkscreen(pol) = circle((- x) - 0.5, y, 0.254)
+  ref-label()
+
+pcb-package QFN50P410X410X100-24N :
+  make-qfn-package(0.5, 4.1, 24, 0.24, 0.38)
+  pcb-pad hs-pad :
+    make-smd-pad(2.7, 2.7)
+  pad p[24] : hs-pad at loc(0.0, 0.0)
+  ref-label()
+
+
+pcb-package FUSC7330X390 :
+  make-two-pin-package(7.26, 2.48, 3.0, 6, 15)
+  ref-label()
+
+pcb-package DIOM-4539X220 :
+  make-two-pin-package(5.58, 2.15, 2.18, 8, 11)
+  layer silkscreen(pol) = line(0.25, point(3.0, -1.0), point(3.0, 1.0))
+  ref-label()
+
+pcb-package QFN50P715X715X80-48 :
+  make-qfn-package(0.5, 7.15, 48, 0.3, 0.5)
+  pcb-pad hs-pad :
+    make-smd-pad(5.1, 5.1)
+  pad p[48] : hs-pad at loc(0.0, 0.0)
+  ref-label()
+
+pcb-package QFN50P400X400X85-24 :
+  make-qfn-package(0.5, 4.0, 24, 0.25, 0.4)
+  pcb-pad hs-pad :
+    make-smd-pad(2.5, 2.5)
+  pad p[24] : hs-pad at loc(0.0, 0.0)
+  ref-label()
+
+pcb-package samtec-clt-pkg (n-row:Int) :
+  pcb-pad pin-pad :
+    make-smd-pad(1.40, 0.89) 
+
+  val n-col = 2
+  val n-rf = to-double(n-row)
+  val row-pitch = 5.92 - 1.4
+  val pin-pitch = 2.0
+
+  val l0 = loc((to-double(n-col - 1) * row-pitch) / -2.0, (to-double(n-row - 1) * pin-pitch) / 2.0)
+  
+  for i in 0 to n-row do :
+    for j in 0 to n-col do :
+      pad p[n-col * i + j] : pin-pad at l0 * loc(to-double(j) * row-pitch, (- to-double(i) * pin-pitch))
+
+  layer cutout = union(
+    symmetric-about-y(
+    [circle(0.0, (pin-pitch * to-double(n-row) - 4.0) / 2.0, 0.76 / 2.0)])
+    grid-locs(n-row, 2, pin-pitch, pin-pitch) * circle(0.43))
+
+  layer silkscreen(f-silk) = line-rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  layer courtyard = rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  layer bottom courtyard = rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+
+  ref-label()
+
+pcb-package samtec-tle-pkg (n-row:Int) :
+  pcb-pad pin-pad :
+    make-smd-pad(1.685, 1.1) 
+
+  val n-col = 2
+  val n-rf = to-double(n-row)
+  val row-pitch = 6.55 - 1.685
+  val pin-pitch = 2.0
+
+  val l0 = loc((to-double(n-col - 1) * row-pitch) / -2.0, (to-double(n-row - 1) * pin-pitch) / 2.0)
+  
+  for i in 0 to n-row do :
+    for j in 0 to n-col do :
+      pad p[n-col * i + j] : pin-pad at l0 * loc(to-double(j) * row-pitch, (- to-double(i) * pin-pitch))
+
+  layer cutout = union(
+    symmetric-about-y(
+    [circle(0.0, (pin-pitch * (to-double(n-row) - 2.0)) / 2.0, 0.76 / 2.0)])
+    grid-locs(n-row, 2, pin-pitch, pin-pitch) * circle(0.38))
+
+  layer silkscreen(f-silk) = line-rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  layer courtyard = rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+  layer bottom courtyard = rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
+
+  ref-label()
+
+pcb-package te-RCU-0C-pkg :
+  pcb-pad pin-pad :
+    make-smd-pad(1.6, 0.8)
+  pad p : pin-pad at loc(0.0, 0.0)
+  layer courtyard = rectangle(1.6, 0.8)
+  ref-label()
+
+pcb-package chips-sip-pkg :
+  pcb-pad pin-pad :
+    make-smd-pad(0.1397, 0.1397)
+  pcb-pad bond :
+    make-smd-pad(16.0, 16.0)
+
+  val offs = 0.7
+
+  var pad-row = row-locs(W, 100, 0.3)
+  val extra = 0.0
+  var top-pad-row = row-locs(W, 100, (0.3 + extra))
+  var start-x = 550.0e-3 - extra * 49.0 / 2.0
+  var start-y = 114.0e-3 - offs - 1.25
+
+  for (i in 0 to 50, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 1000.0e-3 - extra * 46.0 / 2.0
+  start-y = 314.0e-3 - offs
+
+  for (i in 50 to 97, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 1000.0e-3 - extra * 46.0 / 2.0
+  start-y = 15490.0e-3 + offs
+
+  for (i in 97 to 144, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 550.0e-3 - extra * 49.0 / 2.0
+  start-y = 15690.0e-3 + offs + 1.25
+
+  for (i in 144 to 194, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 250.0e-3 - offs
+  start-y = 838.0e-3
+
+  for (i in 194 to 243, l in pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y, 90.0) * l
+
+  start-x = 15550.0e-3 + offs
+  start-y = 538.0e-3
+
+  for (i in 243 to 293, l in pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y, 90.0) * l
+
+  pad p[293] : bond at loc(7900.0e-3, 7900.0e-3)
+
+  val ppads = to-seq(294 to false)
+  val pxlocs = [-1.2, -0.9, -0.6, 0.6, 0.9, 1.2]
+
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + 0.0, 11.0 + 7.9) * loc(l, 0.0)
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + 11.0, 0.0 + 7.9, -90.0) * loc(l, 0.0) 
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + 0.0, -11.0 + 7.9, 180.0) * loc(l, 0.0)
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + -11.0, 0.0 + 7.9, 090.0) * loc(l, 0.0)
+
+  layer courtyard = rectangle(16.0 + 2.0 * offs + 0.6 + 6.0, 16.0 + 2.0 * offs + 0.6 + 6.0, loc(7900.0e-3, 7900.0e-3))
+  ref-label()
+
+;==== Components ===================================================================
+
+public defn molex-lr-box-sym (n:Int, name:Symbol|False) :
+  val ps = PinSpec(
+    expand-range("p", 0, n / 2 - 1)
+    expand-range("p", n / 2, n - 1)
+  )
+  match(name) :
+    (s:Symbol) :
+      generic-box-sym(ps, s)
+    (f) :
+      generic-box-sym(ps)
+
+
+
+pcb-component SN74AVC4T774RGYR-cmp :
+  val ps = PinSpec(
+    [`A1 => 3 `A2 => 4 `A3 => 5 `A4 => 6 `DIR1 => 1 `DIR2 => 2 `DIR3 => 7 `DIR4 => 8 `nOE => 9]; left
+    [`B1 => 14 `B2 => 13 `B3 => 12 `B4 => 11]; right
+    [`GND => 10 `PAD => 17]; bot
+    [`VDDA => 16 `VDDB => 15]; top
+    )
+  make-pins(ps)
+  package = SN74AVC4T774RGYR-pkg(cmp-pad-map(ps))
+  symbol = {generic-box-sym(ps, `ti-SN74AVC774RGYR)}
+  part = SN74AVC4T774RGYR-prt
+
+
+public pcb-component littelfuse-157-cmp (i-hold:Double) :
+  port p : pin[2]
+  symbol = fuse-sym
+  part = {littelfuse-157-prt(i-hold)}
+  reference-prefix = "F"
+  package = FUSC7330X390
+
+pcb-component vishay-SMBJ3v3-cmp :
+  pin a
+  pin c
+  symbol = {diode-sym(`zener)}
+  package = DIOM-4539X220(a => p[0], c => p[1])
+  part = vishay-SMBJ3v3-prt
+  reference-prefix = "D"
+
+pcb-component si-SiT8208-cmp :
+  val ps = PinSpec(
+    [`OE => 1]
+    [`OUT => 3]
+    [`GND => 2]
+    [`VDD => 4])
+  make-pins(ps)
+  package = si-SiT8208-pkg(cmp-pad-map(ps))
+  symbol = {generic-box-sym(ps, `si-SiT8208)}
+  part = si-SiT8208-prt 
+
+pcb-component ti-TRS3122E-cmp :
+  val ps = PinSpec(
+    [`C1+ => 21 `C1- => 16 `C2+ => 22 `C2- => 23 `C3+ => 1 `C3- => 2 `DIN1 => 10 `DIN2 => 9 `ROUT1 => 12 `ROUT2 => 11  `FORCEON => 15 `nFORCEOFF => 14]
+    [`V+ => 20 `V- => 24 `DOUT1 => 5 `DOUT2 => 6 `RIN1 => 3 `RIN2 => 4 `INVALID => 13]
+    [`GND => 17 `pad => 25 `NC0 => 7 `NC1 => 8]
+    [`VCC => 19 `VL => 18])
+  make-pins(ps)
+  package = QFN50P410X410X100-24N(cmp-pad-map(ps))
+  symbol = {generic-box-sym(ps, `ti-TRS3122E)}
+  part = ti-TRS3122E-prt
+
+pcb-component si-53342-cmp :
+  val ps = PinSpec(
+    [`OEAb => 1 `OEBb => 18 `CLK0 => 7 `CLK0b => 8 `CLK1 => 11 `CLK1b => 12 `CLK-SEL => 13]
+    [`Q0 => 5 `Q0b => 4 `Q1 => 3 `Q1b => 2`Q2 => 23 `Q2b => 22 `Q3 => 21 `Q3b => 20 `Q4 => 17 `Q4b => 16 `Q5 => 15 `Q5b => 14]
+    [`pad => 25]
+    [`VDD => 6 `VDDOA => 24 `VDDOB => 19])
+  make-pins(ps)
+  part = si-53342-prt
+  package = QFN50P400X400X85-24(cmp-pad-map(ps))
+  symbol = {generic-box-sym(ps, `si-53342)}
+
+pcb-component ti-lmk01010-cmp :
+  port clkin : pin[2][2]
+  port clkout : pin[8][2]
+  port vcc : pin[14]
+
+  port gnd : pin[2]
+  port nc : pin[5]
+  pin clk
+  pin data
+  pin le
+  pin goe
+  pin test
+  pin sync
+  pin bias
+  pin dap
+
+  val ps = PinSpec(
+    [clkin[0][0] => 28 clkin[0][1] => 29 clkin[1][0] => 34 clkin[1][1] => 35 
+    clk => 4 data => 5 le => 6 goe => 11 sync => 27 bias => 36]
+    [clkout[0][0] => 14 clkout[0][1] => 15 
+    clkout[1][0] => 17 clkout[1][1] => 18
+    clkout[2][0] => 20 clkout[2][1] => 21
+    clkout[3][0] => 23 clkout[3][1] => 24 
+    clkout[4][0] => 38 clkout[4][1] => 39
+    clkout[5][0] => 41 clkout[5][1] => 42
+    clkout[6][0] => 44 clkout[6][1] => 45
+    clkout[7][0] => 47 clkout[7][1] => 48]
+    [gnd[0] => 1 gnd[1] => 25  nc[0] => 2 nc[1] => 7 
+    nc[2] => 9 nc[3] => 10 nc[4] => 32 test => 12 dap => 49]
+    [vcc[0] => 3 vcc[1] => 8 vcc[2] => 13 vcc[3] => 16 
+    vcc[4] => 19 vcc[5] => 22 vcc[6] => 26 vcc[7] => 30 
+    vcc[8] => 31 vcc[9] => 33 vcc[10] => 37 vcc[11] => 40 
+    vcc[12] => 43 vcc[13] => 46])
+  part = ti-lmk01010-prt
+  package = QFN50P715X715X80-48(cmp-pad-map(ps))
+  symbol = {generic-box-sym(ps, `ti-lmk01010)}
+
+pcb-component ti-SN74LVC1G125-cmp :
+  val ps = PinSpec(
+    [`oe => 1 `a => 2 `y => 4 `vs- => 3 `vs+ => 5])
+  make-pins(ps)
+  part = ti-SN74LVC1G125-prt
+  package = SOT23-5N(cmp-pad-map(ps))
+  ;symbol :
+  ;  unit(0) = power-supply-sym(vs- => vs-, vs+ => vs+)
+  ;  unit(1) = {multi-digital-buffer-sym(true)}(a => a, y => y)
+
+  symbol = {generic-box-sym(ps, `ti-SN74LVC1G125)}
+
+public pcb-component samtec-clt-cmp (n-row:Int) :
+  port p : pin[n-row * 2]
+  package = {samtec-clt-pkg(n-row)}
+  symbol = {generic-lr-box-sym((n-row * 2), to-symbol("samtec-clt-%_" % [n-row]))}
+  part = {samtec-clt-prt(n-row)}
+  reference-prefix = "J"
+
+public pcb-component samtec-tle-cmp (n-row:Int) :
+  port p : pin[n-row * 2]
+  package = {samtec-tle-pkg(n-row)}
+  symbol = {generic-lr-box-sym((n-row * 2), to-symbol("samtec-tle-%_" % [n-row]))}
+  part = {samtec-tle-prt(n-row)}
+  reference-prefix = "J"
+
+; SMT test point
+pcb-component te-rcu-0c-cmp :
+  pin p
+  symbol = test-point-sym(p => p[0])
+  part = te-rcu-0c-prt
+  package = te-RCU-0C-pkg
+  reference-prefix = "TP"
+
+pcb-component chips-sip-cmp :
+  port p : pin[318]
+
+  val ps = PinSpec(
+    to-tuple $ for i in 194 to 243 seq : p[i] => i +1
+    to-tuple $ for i in 243 to 294 seq : p[i] => i +1
+    to-tuple $ for i in 0 to 97 seq : p[i] => i +1
+    to-tuple $ cat-all([
+      for i in 97 to 194 seq : p[i] => i +1
+      for i in 294 to 318 seq : p[i] => i +1])
+  )
+
+  symbol = {generic-box-sym(ps, `CHIPS-WB-ARRAY)}
+  package = chips-sip-pkg
+
+
+;==== Modules ===================================================================
+
+; RS232 transceiver configured for 1.8V operation 
+pcb-module ti-TRS3122E :
+  port uart : uart
+  ; TODO what is a capability really? A voltage level? A bit syntax? Should RS232 be its own capability?
+  port rs232 : uart
+  port src-vio : power
+
+  inst t : ti-TRS3122E-cmp
+  inst c :{gen-cap-cmp(0.1)}[6]
+  inst c-l :{gen-cap-cmp(1.0)}
+  net - (t.C1+, c[0].p[0])
+  net - (t.C2+, c[1].p[0])
+  net - (t.C3+, c[2].p[0])
+  net - (t.C1-, c[0].p[1])
+  net - (t.C2-, c[1].p[1])
+  net - (t.C3-, c[2].p[1])
+  net - (t.V+, c[3].p[0])
+  net - (t.V-, c[4].p[0])
+  net - (t.VCC, c[5].p[0], t.VL, c-l.p[0], src-vio.pos, t.FORCEON, t. nFORCEOFF)
+  for i in 3 to 6 do : net - (t.GND, t.pad, t.DIN2, t.RIN2, src-vio.neg, c-l.p[1], c[i].p[1])
+  net - (uart.tx, t.DIN1)
+  net - (uart.rx, t.ROUT1)
+  net RS232-TX (rs232.tx, t.DOUT1)
+  net RS232-RX (rs232.rx, t.RIN1)
+
+pcb-module diff-clk-fanout (n:Int) :
+  port clkin : diff-pair
+  port clkout : diff-pair[n]
+  port vcc : power
+
+  val n-chips = (n + 2 - 1) / 2
+  inst b : si-53342-cmp[n-chips]
+  inst c : {gen-cap-cmp(1.0)}[n-chips]
+  inst j : {samtec-tsm-cmp(n * 2)}
+  val g-count = to-seq(0 to false)  
+  for i in 0 to n do :
+    val n-idx = next(g-count)
+    val g-name = Ref("CLK-%_-EN" % [n-idx])
+    val [chip-idx, chip-ref, buffer-idx] = [i / 2, b[i / 2], i % 2]
+    if buffer-idx == 0 :
+      net - (clkin.D_P, chip-ref.CLK0)
+      net - (clkin.D_N, chip-ref.CLK0b)
+      net - (chip-ref.pad, vcc.neg, c[chip-idx].p[1])
+      net - (chip-ref.VDD, chip-ref.VDDOA, chip-ref.VDDOB, vcc.pos, c[chip-idx].p[0])
+      short-trace(chip-ref.VDD, c[chip-idx].p[0])
+      net - (chip-ref.Q2, clkout[i].D_P)
+      net - (chip-ref.Q2b, clkout[i].D_N)
+      net {g-name} (j.p[i * 2], chip-ref.OEAb)
+    else :
+      net - (chip-ref.Q3, clkout[i].D_P)
+      net - (chip-ref.Q3b, clkout[i].D_N)
+      net {g-name} (j.p[i * 2], chip-ref.OEBb)
+    net - (j.p[i * 2 + 1], vcc.pos)
+
+pcb-module pull-up-jumper (n:Int) :
+  port vin : power
+  port p : pin[n]
+  inst berg : {samtec-tsm-cmp(n * 2)}
+  package(berg) at loc(0.0, 0.0) on Top
+  inst r-pu : {gen-res-cmp(10.0e3)}[n]
+  val g-count = to-seq(0 to false)  
+
+  for i in 0 to n do :
+    val g-name = Ref("RP-%_" % [next(g-count)])
+    net - (berg.p[i * 2], r-pu[i].p[0], p[i])
+    net - (r-pu[i].p[1], vin.pos)
+    net - (berg.p[i * 2 + 1], vin.neg)
+
+pcb-module level-shifter :
+  ; Bidirectional level shifter suitable for steps up/down in 1.8V to 5V range
+  pin pwr-hv    ; Higher voltage power rail
+  pin pwr-lv    ; Lower voltage power rail
+  pin sig-hv    ; Higher voltage signal
+  pin sig-lv    ; Lower voltage signal
+ 
+  inst fet : SSM3K35CTC-cmp
+  inst r-pu : {gen-res-cmp(2700.0)}[2]
+
+  net - (pwr-hv, r-pu[0].p[0])
+  net - (sig-hv, r-pu[0].p[1], fet.d)
+  net - (pwr-lv, r-pu[1].p[0], fet.g)
+  net - (sig-lv, r-pu[1].p[1], fet.s)
+
+pcb-module buffer-fanout (n:Int) :
+  port en : pin[n]
+  pin in
+  port out : pin[n]
+  port vin : power
+  val g-count = to-seq(0 to false)  
+  inst b : ti-SN74LVC1G125-cmp[n]
+  inst c : {gen-cap-cmp(0.1)}[n]
+  
+  for i in 0 to n do :
+    val n-idx = next(g-count)
+    net - (vin.neg, b[i].vs-, c[i].p[1])
+    net - (vin.pos, b[i].vs+, c[i].p[0])
+    short-trace( b[i].vs+, c[i].p[0])
+    net {Ref("CLK-%_-IN" % [n-idx])} (in, b[i].a)
+    net - (out[i], b[i].y)
+    net {Ref("CLK-%_-EN" % [n-idx])} (en[i], b[i].oe)
+  
+pcb-module clock-fanout-jumper-select (n:Int) :
+  port vin : power
+  inst b : {buffer-fanout(n)}
+  inst j : {pull-up-jumper(n + 2)}
+
+  inst b-i : ti-SN74LVC1G125-cmp[2]
+  inst ext-sys-clk : sma-wrapper
+  inst int-sys-clk : si-SiT8208-cmp
+  inst r : {gen-res-cmp(1.0e3)}
+  inst c : {gen-cap-cmp(0.1)}[3]
+
+  net - (vin, b.vin, j.vin)
+  net - (vin.neg, ext-sys-clk.gnd, int-sys-clk.GND, b-i[0].vs-, b-i[1].vs-, c[0].p[1], c[1].p[1], c[2].p[1])
+  net - (vin.pos, int-sys-clk.VDD, b-i[0].vs+, b-i[1].vs+, r.p[0], c[0].p[0], c[1].p[0], c[2].p[0])
+  short-trace(int-sys-clk.VDD, c[0].p[0])
+  short-trace(b-i[0].vs+, c[1].p[0])
+  short-trace(b-i[1].vs+, c[2].p[0])
+  net - (r.p[1], int-sys-clk.OE)
+
+  net CLK-50MHz-EXT (ext-sys-clk.sig)
+  net CLK-50MHz-INT (int-sys-clk.OUT)
+
+  for i in 0 to n do :
+    net - (j.p[i], b.en[i])
+
+  net - (b-i[0].y, b-i[1].y, b.in)
+  net - (b-i[0].a, ext-sys-clk.sig)
+  net - (b-i[1].a, int-sys-clk.OUT)
+
+  for i in 0 to 2 do : net - (b-i[i].oe, j.p[i + n])
+
+pcb-module dut :
+  port p0v8 : power
+  port p0v9 : power
+  port vddio : power
+  port vin : power
+  port jtag : jtag
+  port uart : uart
+  port pmb : pmb
+  port test-pad : pin[64]
+  port bank : chips-bank[16]
+  port fast-clk : diff-pair[8]
+  port gpio: pin[4]
+
+  inst dut : chips-sip-cmp
+  package(dut) at loc(0.0, 0.0) on Top
+
+  net AIB_A_CONFIG_DONE_00 (dut.p[236], bank[0].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_00 (dut.p[239], bank[0].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_00 (dut.p[146], bank[0].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_00 (dut.p[101], bank[0].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_00 (dut.p[238], bank[0].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_00 (dut.p[237], bank[0].AIB_B_TEST_OUT)
+  net FAST_CLK_00_N (dut.p[242], fast-clk[0].D_N)
+  net FAST_CLK_00_P (dut.p[241], fast-clk[0].D_P)
+  net GPIO_00 (dut.p[221],  gpio[0])
+  net LVDS_REXT_00 (dut.p[240], bank[0].LVDS_REXT)
+  net OSC_A_DIV_CLK_00 (dut.p[234], bank[0].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_00 (dut.p[233], bank[0].OSC_B_DIV_CLK)
+  net RESET_N_00 (dut.p[103], bank[0].RESET_N)
+  net SYS_CLK_00 (dut.p[235], bank[0].SYS_CLK)
+  net AIB_A_CONFIG_DONE_01 (dut.p[156], bank[1].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_01 (dut.p[148], bank[1].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_01 (dut.p[149], bank[1].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_01 (dut.p[110], bank[1].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_01 (dut.p[153], bank[1].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_01 (dut.p[154], bank[1].AIB_B_TEST_OUT)
+  net FAST_CLK_01_N (dut.p[152], fast-clk[1].D_N)
+  net FAST_CLK_01_P (dut.p[150], fast-clk[1].D_P)
+  net GPIO_01 (dut.p[216],  gpio[1])
+  net LVDS_REXT_01 (dut.p[151], bank[1].LVDS_REXT)
+  net OSC_A_DIV_CLK_01 (dut.p[155], bank[1].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_01 (dut.p[157], bank[1].OSC_B_DIV_CLK)
+  net RESET_N_01 (dut.p[109], bank[1].RESET_N)
+  net SYS_CLK_01 (dut.p[147], bank[1].SYS_CLK)
+  net AIB_A_CONFIG_DONE_02 (dut.p[179], bank[2].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_02 (dut.p[174], bank[2].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_02 (dut.p[175], bank[2].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_02 (dut.p[113], bank[2].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_02 (dut.p[176], bank[2].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_02 (dut.p[177], bank[2].AIB_B_TEST_OUT)
+  net FAST_CLK_02_N (dut.p[170], fast-clk[2].D_N)
+  net FAST_CLK_02_P (dut.p[172], fast-clk[2].D_P)
+  net GPIO_02 (dut.p[270],  gpio[2])
+  net LVDS_REXT_02 (dut.p[171], bank[2].LVDS_REXT)
+  net OSC_A_DIV_CLK_02 (dut.p[178], bank[2].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_02 (dut.p[180], bank[2].OSC_B_DIV_CLK)
+  net RESET_N_02 (dut.p[114], bank[2].RESET_N)
+  net SYS_CLK_02 (dut.p[173], bank[2].SYS_CLK)
+  net AIB_A_CONFIG_DONE_03 (dut.p[291], bank[3].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_03 (dut.p[286], bank[3].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_03 (dut.p[287], bank[3].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_03 (dut.p[136], bank[3].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_03 (dut.p[288], bank[3].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_03 (dut.p[289], bank[3].AIB_B_TEST_OUT)
+  net FAST_CLK_03_N (dut.p[282], fast-clk[3].D_N)
+  net FAST_CLK_03_P (dut.p[284], fast-clk[3].D_P)
+  net GPIO_03 (dut.p[265],  gpio[3])
+  net LVDS_REXT_03 (dut.p[283], bank[3].LVDS_REXT)
+  net OSC_A_DIV_CLK_03 (dut.p[290], bank[3].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_03 (dut.p[292], bank[3].OSC_B_DIV_CLK)
+  net RESET_N_03 (dut.p[133], bank[3].RESET_N)
+  net SYS_CLK_03 (dut.p[285], bank[3].SYS_CLK)
+  net AIB_A_CONFIG_DONE_04 (dut.p[277], bank[4].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_04 (dut.p[272], bank[4].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_04 (dut.p[273], bank[4].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_04 (dut.p[141], bank[4].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_04 (dut.p[274], bank[4].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_04 (dut.p[275], bank[4].AIB_B_TEST_OUT)
+  net FAST_CLK_04_N (dut.p[279], fast-clk[4].D_N)
+  net FAST_CLK_04_P (dut.p[281], fast-clk[4].D_P)
+  net LVDS_REXT_04 (dut.p[280], bank[4].LVDS_REXT)
+  net OSC_A_DIV_CLK_04 (dut.p[276], bank[4].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_04 (dut.p[278], bank[4].OSC_B_DIV_CLK)
+  net RESET_N_04 (dut.p[142], bank[4].RESET_N)
+  net SYS_CLK_04 (dut.p[271], bank[4].SYS_CLK)
+  net AIB_A_CONFIG_DONE_05 (dut.p[190], bank[5].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_05 (dut.p[182], bank[5].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_05 (dut.p[183], bank[5].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_05 (dut.p[128], bank[5].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_05 (dut.p[187], bank[5].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_05 (dut.p[188], bank[5].AIB_B_TEST_OUT)
+  net FAST_CLK_05_N (dut.p[186], fast-clk[5].D_N)
+  net FAST_CLK_05_P (dut.p[184], fast-clk[5].D_P)
+  net LVDS_REXT_05 (dut.p[185], bank[5].LVDS_REXT)
+  net OSC_A_DIV_CLK_05 (dut.p[189], bank[5].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_05 (dut.p[191], bank[5].OSC_B_DIV_CLK)
+  net RESET_N_05 (dut.p[127], bank[5].RESET_N)
+  net SYS_CLK_05 (dut.p[181], bank[5].SYS_CLK)
+  net AIB_A_CONFIG_DONE_06 (dut.p[168], bank[6].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_06 (dut.p[163], bank[6].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_06 (dut.p[164], bank[6].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_06 (dut.p[111], bank[6].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_06 (dut.p[165], bank[6].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_06 (dut.p[166], bank[6].AIB_B_TEST_OUT)
+  net FAST_CLK_06_N (dut.p[159], fast-clk[6].D_N)
+  net FAST_CLK_06_P (dut.p[161], fast-clk[6].D_P)
+  net LVDS_REXT_06 (dut.p[160], bank[6].LVDS_REXT)
+  net OSC_A_DIV_CLK_06 (dut.p[167], bank[6].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_06 (dut.p[169], bank[6].OSC_B_DIV_CLK)
+  net RESET_N_06 (dut.p[112], bank[6].RESET_N)
+  net SYS_CLK_06 (dut.p[162], bank[6].SYS_CLK)
+  net AIB_A_CONFIG_DONE_07 (dut.p[227], bank[7].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_07 (dut.p[223], bank[7].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_07 (dut.p[222], bank[7].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_07 (dut.p[102], bank[7].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_07 (dut.p[225], bank[7].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_07 (dut.p[224], bank[7].AIB_B_TEST_OUT)
+  net FAST_CLK_07_N (dut.p[230], fast-clk[7].D_N)
+  net FAST_CLK_07_P (dut.p[232], fast-clk[7].D_P)
+  net LVDS_REXT_07 (dut.p[231], bank[7].LVDS_REXT)
+  net OSC_A_DIV_CLK_07 (dut.p[228], bank[7].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_07 (dut.p[226], bank[7].OSC_B_DIV_CLK)
+  net RESET_N_07 (dut.p[104], bank[7].RESET_N)
+  net SYS_CLK_07 (dut.p[229], bank[7].SYS_CLK)
+  net AIB_A_CONFIG_DONE_08 (dut.p[207], bank[8].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_08 (dut.p[209], bank[8].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_08 (dut.p[210], bank[8].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_08 (dut.p[56], bank[8].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_08 (dut.p[214], bank[8].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_08 (dut.p[215], bank[8].AIB_B_TEST_OUT)
+  net LVDS_REXT_08 (dut.p[211], bank[8].LVDS_REXT)
+  net OSC_A_DIV_CLK_08 (dut.p[208], bank[8].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_08 (dut.p[206], bank[8].OSC_B_DIV_CLK)
+  net RESET_N_08 (dut.p[57], bank[8].RESET_N)
+  net SYS_CLK_08 (dut.p[205], bank[8].SYS_CLK)
+  net AIB_A_CONFIG_DONE_09 (dut.p[11], bank[9].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_09 (dut.p[3], bank[9].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_09 (dut.p[4], bank[9].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_09 (dut.p[64], bank[9].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_09 (dut.p[8], bank[9].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_09 (dut.p[9], bank[9].AIB_B_TEST_OUT)
+  net LVDS_REXT_09 (dut.p[7], bank[9].LVDS_REXT)
+  net OSC_A_DIV_CLK_09 (dut.p[10], bank[9].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_09 (dut.p[12], bank[9].OSC_B_DIV_CLK)
+  net RESET_N_09 (dut.p[13], bank[9].RESET_N)
+  net SYS_CLK_09 (dut.p[2], bank[9].SYS_CLK)
+  net AIB_A_CONFIG_DONE_10 (dut.p[35], bank[10].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_10 (dut.p[27], bank[10].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_10 (dut.p[28], bank[10].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_10 (dut.p[81], bank[10].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_10 (dut.p[32], bank[10].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_10 (dut.p[33], bank[10].AIB_B_TEST_OUT)
+  net LVDS_REXT_10 (dut.p[30], bank[10].LVDS_REXT)
+  net OSC_A_DIV_CLK_10 (dut.p[34], bank[10].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_10 (dut.p[36], bank[10].OSC_B_DIV_CLK)
+  net RESET_N_10 (dut.p[82], bank[10].RESET_N)
+  net SYS_CLK_10 (dut.p[26], bank[10].SYS_CLK)
+  net AIB_A_CONFIG_DONE_11 (dut.p[263], bank[11].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_11 (dut.p[258], bank[11].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_11 (dut.p[259], bank[11].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_11 (dut.p[90], bank[11].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_11 (dut.p[260], bank[11].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_11 (dut.p[261], bank[11].AIB_B_TEST_OUT)
+  net LVDS_REXT_11 (dut.p[255], bank[11].LVDS_REXT)
+  net OSC_A_DIV_CLK_11 (dut.p[262], bank[11].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_11 (dut.p[264], bank[11].OSC_B_DIV_CLK)
+  net RESET_N_11 (dut.p[89], bank[11].RESET_N)
+  net SYS_CLK_11 (dut.p[257], bank[11].SYS_CLK)
+  net AIB_A_CONFIG_DONE_12 (dut.p[251], bank[12].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_12 (dut.p[249], bank[12].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_12 (dut.p[248], bank[12].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_12 (dut.p[91], bank[12].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_12 (dut.p[246], bank[12].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_12 (dut.p[247], bank[12].AIB_B_TEST_OUT)
+  net LVDS_REXT_12 (dut.p[243], bank[12].LVDS_REXT)
+  net OSC_A_DIV_CLK_12 (dut.p[250], bank[12].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_12 (dut.p[252], bank[12].OSC_B_DIV_CLK)
+  net RESET_N_12 (dut.p[92], bank[12].RESET_N)
+  net SYS_CLK_12 (dut.p[245], bank[12].SYS_CLK)
+  net AIB_A_CONFIG_DONE_13 (dut.p[47], bank[13].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_13 (dut.p[42], bank[13].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_13 (dut.p[43], bank[13].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_13 (dut.p[83], bank[13].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_13 (dut.p[44], bank[13].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_13 (dut.p[45], bank[13].AIB_B_TEST_OUT)
+  net LVDS_REXT_13 (dut.p[39], bank[13].LVDS_REXT)
+  net OSC_A_DIV_CLK_13 (dut.p[46], bank[13].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_13 (dut.p[48], bank[13].OSC_B_DIV_CLK)
+  net RESET_N_13 (dut.p[84], bank[13].RESET_N)
+  net SYS_CLK_13 (dut.p[41], bank[13].SYS_CLK)
+  net AIB_A_CONFIG_DONE_14 (dut.p[23], bank[14].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_14 (dut.p[15], bank[14].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_14 (dut.p[16], bank[14].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_14 (dut.p[69], bank[14].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_14 (dut.p[20], bank[14].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_14 (dut.p[21], bank[14].AIB_B_TEST_OUT)
+  net LVDS_REXT_14 (dut.p[18], bank[14].LVDS_REXT)
+  net OSC_A_DIV_CLK_14 (dut.p[22], bank[14].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_14 (dut.p[24], bank[14].OSC_B_DIV_CLK)
+  net RESET_N_14 (dut.p[70], bank[14].RESET_N)
+  net SYS_CLK_14 (dut.p[14], bank[14].SYS_CLK)
+  net AIB_A_CONFIG_DONE_15 (dut.p[202], bank[15].AIB_A_CONFIG_DONE)
+  net AIB_A_TEST_IN_15 (dut.p[197], bank[15].AIB_A_TEST_IN)
+  net AIB_A_TEST_OUT_15 (dut.p[198], bank[15].AIB_A_TEST_OUT)
+  net AIB_B_CONFIG_DONE_15 (dut.p[54], bank[15].AIB_B_CONFIG_DONE)
+  net AIB_B_TEST_IN_15 (dut.p[200], bank[15].AIB_B_TEST_IN)
+  net AIB_B_TEST_OUT_15 (dut.p[199], bank[15].AIB_B_TEST_OUT)
+  net LVDS_REXT_15 (dut.p[194], bank[15].LVDS_REXT)
+  net OSC_A_DIV_CLK_15 (dut.p[203], bank[15].OSC_A_DIV_CLK)
+  net OSC_B_DIV_CLK_15 (dut.p[201], bank[15].OSC_B_DIV_CLK)
+  net RESET_N_15 (dut.p[55], bank[15].RESET_N)
+  net SYS_CLK_15 (dut.p[204], bank[15].SYS_CLK)
+  net ts_A0a (dut.p[99], test-pad[0])
+  net ts_A0b (dut.p[100], test-pad[1])
+  net ts_A10a (dut.p[74], test-pad[2])
+  net ts_A10b (dut.p[73], test-pad[3])
+  net ts_A11a (dut.p[78], test-pad[4])
+  net ts_A11b (dut.p[77], test-pad[5])
+  net ts_A12a (dut.p[88], test-pad[6])
+  net ts_A12b (dut.p[87], test-pad[7])
+  net ts_A13a (dut.p[80], test-pad[8])
+  net ts_A13b (dut.p[79], test-pad[9])
+  net ts_A14a (dut.p[68], test-pad[10])
+  net ts_A14b (dut.p[67], test-pad[11])
+  net ts_A15a (dut.p[52], test-pad[12])
+  net ts_A15b (dut.p[53], test-pad[13])
+  net ts_A1a (dut.p[107], test-pad[14])
+  net ts_A1b (dut.p[108], test-pad[15])
+  net ts_A2a (dut.p[117], test-pad[16])
+  net ts_A2b (dut.p[118], test-pad[17])
+  net ts_A3a (dut.p[134], test-pad[18])
+  net ts_A3b (dut.p[135], test-pad[19])
+  net ts_A4a (dut.p[137], test-pad[20])
+  net ts_A4b (dut.p[138], test-pad[21])
+  net ts_A5a (dut.p[129], test-pad[22])
+  net ts_A5b (dut.p[130], test-pad[23])
+  net ts_A6a (dut.p[121], test-pad[24])
+  net ts_A6b (dut.p[122], test-pad[25])
+  net ts_A7a (dut.p[97], test-pad[26])
+  net ts_A7b (dut.p[98], test-pad[27])
+  net ts_A8a (dut.p[50], test-pad[28])
+  net ts_A8b (dut.p[51], test-pad[29])
+  net ts_A9a (dut.p[63], test-pad[30])
+  net ts_A9b (dut.p[62], test-pad[31])
+  net ts_C0a (dut.p[105], test-pad[32])
+  net ts_C0b (dut.p[106], test-pad[33])
+  net ts_C10a (dut.p[76], test-pad[34])
+  net ts_C10b (dut.p[75], test-pad[35])
+  net ts_C11a (dut.p[94], test-pad[36])
+  net ts_C11b (dut.p[93], test-pad[37])
+  net ts_C12a (dut.p[96], test-pad[38])
+  net ts_C12b (dut.p[95], test-pad[39])
+  net ts_C13a (dut.p[86], test-pad[40])
+  net ts_C13b (dut.p[85], test-pad[41])
+  net ts_C14a (dut.p[72], test-pad[42])
+  net ts_C14b (dut.p[71], test-pad[43])
+  net ts_C15a (dut.p[60], test-pad[44])
+  net ts_C15b (dut.p[61], test-pad[45])
+  net ts_C1a (dut.p[115], test-pad[46])
+  net ts_C1b (dut.p[116], test-pad[47])
+  net ts_C2a (dut.p[125], test-pad[48])
+  net ts_C2b (dut.p[126], test-pad[49])
+  net ts_C3a (dut.p[139], test-pad[50])
+  net ts_C3b (dut.p[140], test-pad[51])
+  net ts_C4a (dut.p[254], test-pad[52])
+  net ts_C4b (dut.p[253], test-pad[53])
+  net ts_C5a (dut.p[131], test-pad[54])
+  net ts_C5b (dut.p[132], test-pad[55])
+  net ts_C6a (dut.p[123], test-pad[56])
+  net ts_C6b (dut.p[124], test-pad[57])
+  net ts_C7a (dut.p[119], test-pad[58])
+  net ts_C7b (dut.p[120], test-pad[59])
+  net ts_C8a (dut.p[58], test-pad[60])
+  net ts_C8b (dut.p[59], test-pad[61])
+  net ts_C9a (dut.p[66], test-pad[62])
+  net ts_C9b (dut.p[65], test-pad[63])
+  net NC_0 (dut.p[193])
+  net NC_1 (dut.p[196])
+  net NC_10 (dut.p[40])
+  net NC_11 (dut.p[38])
+  net NC_12 (dut.p[244])
+  net NC_2 (dut.p[212])
+  net NC_3 (dut.p[213])
+  net NC_4 (dut.p[5])
+  net NC_5 (dut.p[6])
+  net NC_6 (dut.p[17])
+  net NC_7 (dut.p[29])
+  net NC_8 (dut.p[19])
+  net NC_9 (dut.p[31])
+  net JTAG_TCK (dut.p[144], jtag.tck)
+  net JTAG_TDI (dut.p[145], jtag.tdi)
+  net JTAG_TDO (dut.p[195], jtag.tdo)
+  net JTAG_TMS (dut.p[0], jtag.tms)
+  net JTAG_TRSTN (dut.p[1], jtag.trstn)
+  net PMB_CLK (dut.p[192], pmb.clk)
+  net PMB_DAT (dut.p[25], pmb.dat)
+  net UART_RX (dut.p[158], uart.rx)
+  net UART_TX (dut.p[37], uart.tx)
+  net VDDIO (dut.p[143], dut.p[256], vddio.pos)
+  net VIN (dut.p[217], dut.p[218], dut.p[266], dut.p[267], vin.pos)
+  net VSS (dut.p[49], dut.p[219], dut.p[220], dut.p[268], dut.p[269], vddio.neg, vin.neg, p0v9.neg, p0v8.neg)
+  net - (dut.p[294], dut.p[295], dut.p[296], dut.p[300], dut.p[301], dut.p[302], dut.p[306], dut.p[307], dut.p[308], dut.p[312], dut.p[313], dut.p[314], p0v8.pos)
+  net - (dut.p[297], dut.p[298], dut.p[299], dut.p[303], dut.p[304], dut.p[305], dut.p[309], dut.p[310], dut.p[311], dut.p[315], dut.p[316], dut.p[317], p0v9.pos)
+
+public pcb-module power-indicator-led (voltage:Double) :
+  port rail : power
+  ; 2ma curent, forward voltage = 1.8
+  inst l : osr-LG-L29K-F2J1-24-cmp
+
+  if voltage < 3.3 :
+    port pow3v3 : power
+    inst npn : nxp-PMBT3904-cmp
+    inst r-b : {gen-res-cmp(1.0e3)}
+    val r-val = (3.3 - 1.8) / 2.0e-3
+    inst r : {gen-res-cmp(r-val)}
+    net - (rail.pos, r-b.p[0])
+    net - (npn.b, r-b.p[1])
+    net - (r.p[0], npn.c)     
+    net - (r.p[1], l.c)
+    net - (l.a, pow3v3.pos)
+    net - (npn.e, pow3v3.neg, rail.neg)
+  else :
+    val r-val = (voltage - 1.8) / 2.0e-3
+    inst r : {gen-res-cmp(r-val)}
+    net - (r.p[0], rail.neg)     
+    net - (r.p[1], l.c)
+    net - (l.a, rail.pos)
+
+pcb-module power-conditioning (voltage:Double, fuse:Double) :
+  port src : power
+  port dst : power
+  inst f : {littelfuse-157-cmp(fuse)}
+  inst tvs : vishay-SMBJ3v3-cmp
+  inst c : panasonic-cap-100uf-cmp
+  inst l : {power-indicator-led(voltage)}
+  net - (src.pos, f.p[0])
+  net - (tvs.c, c.a, f.p[1], l.rail.pos, dst.pos)
+  net - (tvs.a, c.c, src.neg, dst.neg, l.rail.neg)
+  if voltage < 3.3 :
+    port pow3v3 : power
+    net - (src.neg, pow3v3.neg)
+    net - (l.pow3v3, pow3v3)
+
+pcb-module reset-button :
+  port pow-vio : power
+  pin reset
+  inst b : omron-B3U-1000P-cmp
+  ;pull down for now
+  inst r : {gen-res-cmp(10.0e3)}[2]
+  inst c : {gen-cap-cmp(0.1)}
+  net - (r[0].p[1], pow-vio.pos)
+  net - (b.p[1], r[0].p[0], r[1].p[0])
+  net - (r[1].p[1], c.p[0], reset)
+  net - (c.p[1], b.p[0], pow-vio.neg)
+
+  ; JTAG connector
+pcb-module arm-jtag-connector :
+  port jtag : jtag
+  port pow-vio : power
+  port pow-vout : power
+  inst jtag-con : {pin-header-cmp(10, 2)}
+  inst r-jp : {gen-res-cmp(4.7e3)}
+  inst r-jtp : {gen-res-cmp(10.0e3)}[3]
+  ; FIXME: This level shifter is not well matched to the problem and is overkill.
+  ; It's a 4 channel with direction control.
+  ; We need 5 channels, with fixed direction.
+  inst ls : SN74AVC4T774RGYR-cmp[2]
+
+  net - (pow-vout.pos, jtag-con.p[0], r-jtp[0].p[0], r-jtp[1].p[0], r-jp.p[0])
+  net - (pow-vio.neg, jtag-con.p[2], jtag-con.p[4], jtag-con.p[8], r-jtp[2].p[0])
+
+  ; Pullup resistors on connector
+  net - (jtag-con.p[1], r-jtp[0].p[1])
+  net - (jtag-con.p[3], r-jtp[2].p[1])
+  net - (jtag-con.p[7], r-jtp[1].p[1])
+  net - (jtag-con.p[9], r-jp.p[1])
+
+  ;     Level shifter primary side connect to VIO
+  ;     Power and enable
+  for i in 0 to 2 do :
+    net - (ls[i].nOE,  pow-vio.neg)
+    net - (ls[i].GND,  pow-vio.neg)
+    net - (ls[i].PAD,  pow-vio.neg)
+    net - (ls[i].VDDA, pow-vio.pos)
+    net - (ls[i].VDDB, pow-vout.pos)
+  ;     Direction straps. Strap low gives B->A
+  net - (ls[0].DIR1,  pow-vio.neg)
+  net - (ls[0].DIR2,  pow-vio.neg)
+  net - (ls[0].DIR3,  pow-vio.neg)
+  net - (ls[0].DIR4,  pow-vio.neg)
+  net - (ls[1].DIR1,  pow-vio.pos)
+  net - (ls[1].DIR2,  pow-vio.pos)
+  net - (ls[1].DIR3,  pow-vio.pos)
+  net - (ls[1].DIR4,  pow-vio.pos)
+  ;     Net dut side
+  net - (jtag.tck,   ls[0].A1)
+  net - (jtag.tdi,   ls[0].A2)
+  net - (jtag.trstn, ls[0].A3)
+  net - (jtag.tms,   ls[0].A4)
+  net - (jtag.tdo,   ls[1].A1)
+  ;     Net connector side
+  net tck   (jtag-con.p[3], ls[0].B1)
+  net tdi   (jtag-con.p[7], ls[0].B2)
+  net trstn (jtag-con.p[9], ls[0].B3)
+  net tms   (jtag-con.p[1], ls[0].B4)
+  net tdo   (jtag-con.p[5], ls[1].B1)
+  ;     Strap unused pins low
+  net - (ls[1].A2, pow-vio.neg)
+  net - (ls[1].A3, pow-vio.neg)
+  net - (ls[1].A4, pow-vio.neg)
+  net - (ls[1].B2, pow-vout.neg)
+  net - (ls[1].B3, pow-vout.neg)
+  net - (ls[1].B4, pow-vout.neg)
+
+  ; TODO: Add bypassing
+
+pcb-material prepreg-370HR :
+  type = dielectric
+  dielectric-coefficient = 4.26
+  product-name = "FR4 Prepreg 2x1080 - 65%"
+
+pcb-stackup tempo-automation-10-layer-62-mil :
+  product-name = "Tempo 10-layer 0.062in"
+  layer(2.03e-2, soldermask) 
+  layer(5.08e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.879e-1, core)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(1.524e-2, copper) 
+  layer(1.498e-1, prepreg-370HR)
+  layer(5.08e-2, copper) 
+  layer(2.03e-2, soldermask) 
+
+;==== Module ===================================================================
+;val brd-outline = rectangle(5.0 * 25.4, 2.1 * 25.4) 
+val brd-outline = rectangle(3.0 * 25.4, 5.0 * 25.4) 
+pcb-module chips :
+  inst dut : dut
+  val tc-rows = 17
+  inst hs-con : {samtec-tle-cmp(tc-rows)}[10]
+
+  inst test-con : {samtec-tle-cmp(tc-rows)}[4]
+
+  inst sys-clk-select : {clock-fanout-jumper-select(16)}
+
+  inst r-b : reset-button
+
+  ; Power protection
+  inst power-con : {molex-mini-fit-jr-cmp(10)}
+  net GND (power-con.p[0], dut.vin.neg, dut.vddio.neg)
+  for i in 0 to 4 do :
+    net - (power-con.p[4], power-con.p[i])
+  inst pc-3v3 : {power-conditioning(3.3, 1.0)}
+  inst pc-1v8 : {power-conditioning(1.8, 5.0)}
+  inst pc-0v9 : {power-conditioning(0.9, 3.0)}
+  inst decouple-caps : {power-decouple(4.0, 10.0e-3, 1.0e-3)}[12]
+  inst pc-0v8 : {power-conditioning(0.8, 3.0)}
+
+  net - (pc-3v3.dst, pc-1v8.pow3v3, pc-0v9.pow3v3, pc-0v8.pow3v3)
+  net sup3v3 (power-con.p[9], pc-3v3.src.pos)
+  net sup1v8 (power-con.p[5], power-con.p[6] pc-1v8.src.pos)
+  net sup0v9 (power-con.p[7], pc-0v9.src.pos)
+  net sup0v8 (power-con.p[8], pc-0v8.src.pos)
+  net - (power-con.p[0], pc-3v3.src.neg, pc-1v8.src.neg, pc-0v9.src.neg, pc-0v8.src.neg)
+
+  net - (dut.vin, dut.vddio, r-b.pow-vio, pc-1v8.dst, sys-clk-select.vin)
+  net P0v8-FS (pc-0v8.dst.pos, dut.p0v8.pos)
+  net P0v9-FS (pc-0v9.dst.pos, dut.p0v9.pos)
+  net P1v8-FS (pc-1v8.dst.pos)
+  net P3v3-FS (pc-3v3.dst.pos)
+
+  ;Power decoupling
+  for i in 0 to 4 do :
+    net - (dut.vddio, decouple-caps[i].dst)
+    net - (pc-1v8.dst, decouple-caps[i].src)
+    package(decouple-caps[i]) on Bottom
+  for i in 4 to 8 do :
+    net - (dut.p0v8, decouple-caps[i].dst)
+    net - (pc-0v8.dst, decouple-caps[i].src)
+    package(decouple-caps[i]) on Bottom
+  for i in 8 to 12 do :
+    net - (dut.p0v9, decouple-caps[i].dst)
+    net - (pc-0v9.dst, decouple-caps[i].src)
+    package(decouple-caps[i]) on Bottom
+
+  short-trace(decouple-caps[0].c0.p[1], dut.dut.p[143])
+  short-trace(decouple-caps[1].c0.p[1], dut.dut.p[256])
+  short-trace(decouple-caps[2].c0.p[1], dut.dut.p[217])
+  short-trace(decouple-caps[3].c0.p[1], dut.dut.p[266])
+  short-trace(decouple-caps[4].c0.p[1], dut.dut.p[294])
+  short-trace(decouple-caps[5].c0.p[1], dut.dut.p[300])
+  short-trace(decouple-caps[6].c0.p[1], dut.dut.p[306])
+  short-trace(decouple-caps[7].c0.p[1], dut.dut.p[312])
+  short-trace(decouple-caps[8].c0.p[1], dut.dut.p[297])
+  short-trace(decouple-caps[9].c0.p[1], dut.dut.p[303])
+  short-trace(decouple-caps[10].c0.p[1], dut.dut.p[309])
+  short-trace(decouple-caps[11].c0.p[1], dut.dut.p[315])
+
+  ; Ferric connector
+  inst ferric : {phoenix-combicon-mc-cmp(3)}
+  ;inst r-fp : {gen-res-cmp(2.7e3)}[2]
+  inst ls : level-shifter[2]
+  
+  net - (ls[0].pwr-hv, ls[1].pwr-hv, pc-3v3.dst.pos)
+  net - (ls[0].pwr-lv, ls[1].pwr-lv, pc-1v8.dst.pos)
+  net dut_pmb_clk (ls[0].sig-lv, dut.pmb.clk)
+  net out_pmb_clk (ls[0].sig-hv, ferric.p[0])
+  net dut_pmb_dat (ls[1].sig-lv, dut.pmb.dat)
+  net out_pmb_dat (ls[1].sig-hv, ferric.p[1])
+  net - (ferric.p[2], pc-1v8.dst.neg)
+
+  ; JTAG connector w/ level shifter
+  inst jt : arm-jtag-connector
+  net - (jt.jtag,     dut.jtag)
+  net - (jt.pow-vio,  pc-1v8.dst)
+  net - (jt.pow-vout, pc-3v3.dst)
+
+  ;RS232 Interface
+  inst t : ti-TRS3122E
+  inst rs232 : {pin-header-cmp(3)}
+  net - (rs232.p[0], power-con.p[0])
+  net - (rs232.p[1], t.rs232.tx)
+  net - (rs232.p[2], t.rs232.rx)
+  net - (dut.uart, t.uart)
+  net - (t.src-vio, pc-1v8.dst)
+
+  ;LVDS pull resistors
+  inst r-lvds : {gen-res-cmp(11.8e3, 1.0)}[16]
+
+  for i in 0 to 16 do :
+    net - (dut.bank[i].LVDS_REXT, r-lvds[i].p[0])
+    net - (power-con.p[0], r-lvds[i].p[1])
+    net - (dut.bank[i].RESET_N, r-b.reset)
+    net - (dut.bank[i].SYS_CLK, sys-clk-select.b.out[i])
+
+
+
+  ; Net to high speed connector
+  defn connect-hs-cons (asgns:Tuple<Tuple<Int>>) :
+    for (c in asgns, i in 0 to 4) do :
+      for (b in c, j in 0 to 4) do :
+        net - (dut.bank[b].LVDS_REXT hs-con[i].p[9 * j + 0])
+        net - (dut.bank[b].AIB_A_TEST_IN hs-con[i].p[9 * j + 1])
+        net - (dut.bank[b].AIB_B_TEST_IN hs-con[i].p[9 * j + 2])
+        net - (dut.bank[b].AIB_B_TEST_OUT hs-con[i].p[9 * j + 3])
+        net - (dut.bank[b].AIB_A_CONFIG_DONE hs-con[i].p[9 * j + 4])
+        net - (dut.bank[b].SYS_CLK, sys-clk-select.b.out[b])
+        net - (dut.bank[b].OSC_A_DIV_CLK hs-con[i].p[9 * j + 5])
+        net - (dut.bank[b].OSC_B_DIV_CLK hs-con[i].p[9 * j + 6])
+        net - (dut.bank[b].AIB_A_TEST_OUT hs-con[i].p[9 * j + 7])
+        net - (dut.bank[b].AIB_B_CONFIG_DONE hs-con[i].p[9 * j + 8])
+        net - (dut.bank[b].RESET_N, r-b.reset)
+
+  ;connect-hs-cons([[9 14 10 13]
+  ;                [5 2 6 1]
+  ;                [12 11 4 3]
+  ;                [0 7 8 15]])
+
+  net - (hs-con[0].p[30], dut.dut.p[3])
+  net - (hs-con[1].p[30], dut.dut.p[4])
+  net - (hs-con[2].p[30], dut.dut.p[7])
+  net - (hs-con[0].p[28], dut.dut.p[8])
+  net - (hs-con[1].p[28], dut.dut.p[9])
+  net - (hs-con[2].p[28], dut.dut.p[10])
+  net - (hs-con[0].p[26], dut.dut.p[11])
+  net - (hs-con[1].p[26], dut.dut.p[12])
+  net - (hs-con[2].p[26], dut.dut.p[15])
+  net - (hs-con[0].p[24], dut.dut.p[16])
+  net - (hs-con[1].p[24], dut.dut.p[18])
+  net - (hs-con[2].p[24], dut.dut.p[20])
+  net - (hs-con[0].p[22], dut.dut.p[21])
+  net - (hs-con[1].p[22], dut.dut.p[22])
+  net - (hs-con[2].p[22], dut.dut.p[23])
+  net - (hs-con[0].p[20], dut.dut.p[24])
+  net - (hs-con[1].p[20], dut.dut.p[27])
+  net - (hs-con[2].p[20], dut.dut.p[28])
+  net - (hs-con[0].p[18], dut.dut.p[30])
+  net - (hs-con[1].p[18], dut.dut.p[32])
+  net - (hs-con[2].p[18], dut.dut.p[33])
+  net - (hs-con[0].p[16], dut.dut.p[34])
+  net - (hs-con[1].p[16], dut.dut.p[35])
+  net - (hs-con[2].p[16], dut.dut.p[36])
+  net - (hs-con[0].p[14], dut.dut.p[39])
+  net - (hs-con[1].p[14], dut.dut.p[42])
+  net - (hs-con[2].p[14], dut.dut.p[43])
+  net - (hs-con[0].p[12], dut.dut.p[44])
+  net - (hs-con[1].p[12], dut.dut.p[45])
+  net - (hs-con[2].p[12], dut.dut.p[46])
+  net - (hs-con[0].p[10], dut.dut.p[47])
+  net - (hs-con[1].p[10], dut.dut.p[48])
+  net - (hs-con[2].p[10], dut.dut.p[54])
+  net - (hs-con[0].p[8], dut.dut.p[56])
+  net - (hs-con[1].p[8], dut.dut.p[64])
+  net - (hs-con[2].p[8], dut.dut.p[69])
+  net - (hs-con[0].p[6], dut.dut.p[81])
+  net - (hs-con[1].p[6], dut.dut.p[83])
+  net - (hs-con[2].p[6], dut.dut.p[90])
+  net - (hs-con[0].p[4], dut.dut.p[91])
+  net - (hs-con[3].p[0], dut.dut.p[101])
+  net - (hs-con[4].p[0], dut.dut.p[102])
+  net - (hs-con[5].p[0], dut.dut.p[110])
+  net - (hs-con[3].p[2], dut.dut.p[111])
+  net - (hs-con[4].p[2], dut.dut.p[113])
+  net - (hs-con[5].p[2], dut.dut.p[128])
+  net - (hs-con[3].p[4], dut.dut.p[136])
+  net - (hs-con[4].p[4], dut.dut.p[141])
+  net - (hs-con[5].p[4], dut.dut.p[146])
+  net - (hs-con[3].p[6], dut.dut.p[148])
+  net - (hs-con[4].p[6], dut.dut.p[149])
+  net - (hs-con[5].p[6], dut.dut.p[151])
+  net - (hs-con[3].p[8], dut.dut.p[153])
+  net - (hs-con[4].p[8], dut.dut.p[154])
+  net - (hs-con[5].p[8], dut.dut.p[155])
+  net - (hs-con[3].p[10], dut.dut.p[156])
+  net - (hs-con[4].p[10], dut.dut.p[157])
+  net - (hs-con[5].p[10], dut.dut.p[160])
+  net - (hs-con[3].p[12], dut.dut.p[163])
+  net - (hs-con[4].p[12], dut.dut.p[164])
+  net - (hs-con[5].p[12], dut.dut.p[165])
+  net - (hs-con[3].p[14], dut.dut.p[166])
+  net - (hs-con[4].p[14], dut.dut.p[167])
+  net - (hs-con[5].p[14], dut.dut.p[168])
+  net - (hs-con[3].p[16], dut.dut.p[169])
+  net - (hs-con[4].p[16], dut.dut.p[171])
+  net - (hs-con[5].p[16], dut.dut.p[174])
+  net - (hs-con[3].p[18], dut.dut.p[175])
+  net - (hs-con[4].p[18], dut.dut.p[176])
+  net - (hs-con[5].p[18], dut.dut.p[177])
+  net - (hs-con[3].p[20], dut.dut.p[178])
+  net - (hs-con[4].p[20], dut.dut.p[179])
+  net - (hs-con[5].p[20], dut.dut.p[180])
+  net - (hs-con[3].p[22], dut.dut.p[182])
+  net - (hs-con[4].p[22], dut.dut.p[183])
+  net - (hs-con[5].p[22], dut.dut.p[185])
+  net - (hs-con[3].p[24], dut.dut.p[187])
+  net - (hs-con[4].p[24], dut.dut.p[188])
+  net - (hs-con[5].p[24], dut.dut.p[189])
+  net - (hs-con[3].p[26], dut.dut.p[190])
+  net - (hs-con[4].p[26], dut.dut.p[191])
+  net - (hs-con[9].p[0], dut.dut.p[194])
+  net - (hs-con[8].p[0], dut.dut.p[197])
+  net - (hs-con[9].p[2], dut.dut.p[198])
+  net - (hs-con[8].p[2], dut.dut.p[199])
+  net - (hs-con[9].p[4], dut.dut.p[200])
+  net - (hs-con[8].p[4], dut.dut.p[201])
+  net - (hs-con[9].p[6], dut.dut.p[202])
+  net - (hs-con[8].p[6], dut.dut.p[203])
+  net - (hs-con[9].p[8], dut.dut.p[206])
+  net - (hs-con[8].p[8], dut.dut.p[207])
+  net - (hs-con[9].p[10], dut.dut.p[208])
+  net - (hs-con[8].p[10], dut.dut.p[209])
+  net - (hs-con[9].p[12], dut.dut.p[210])
+  net - (hs-con[8].p[12], dut.dut.p[211])
+  net - (hs-con[9].p[14], dut.dut.p[214])
+  net - (hs-con[8].p[14], dut.dut.p[215])
+  net - (hs-con[9].p[16], dut.dut.p[216])
+  net - (hs-con[8].p[16], dut.dut.p[221])
+  net - (hs-con[9].p[18], dut.dut.p[222])
+  net - (hs-con[8].p[18], dut.dut.p[223])
+  net - (hs-con[9].p[20], dut.dut.p[224])
+  net - (hs-con[8].p[20], dut.dut.p[225])
+  net - (hs-con[9].p[22], dut.dut.p[226])
+  net - (hs-con[8].p[22], dut.dut.p[227])
+  net - (hs-con[9].p[24], dut.dut.p[228])
+  net - (hs-con[8].p[24], dut.dut.p[231])
+  net - (hs-con[9].p[26], dut.dut.p[233])
+  net - (hs-con[8].p[26], dut.dut.p[234])
+  net - (hs-con[9].p[28], dut.dut.p[236])
+  net - (hs-con[8].p[28], dut.dut.p[237])
+  net - (hs-con[9].p[30], dut.dut.p[238])
+  net - (hs-con[8].p[30], dut.dut.p[239])
+  net - (hs-con[9].p[0], dut.dut.p[240])
+  net - (hs-con[6].p[30], dut.dut.p[243])
+  net - (hs-con[7].p[30], dut.dut.p[246])
+  net - (hs-con[6].p[28], dut.dut.p[247])
+  net - (hs-con[7].p[28], dut.dut.p[248])
+  net - (hs-con[6].p[26], dut.dut.p[249])
+  net - (hs-con[7].p[26], dut.dut.p[250])
+  net - (hs-con[6].p[24], dut.dut.p[251])
+  net - (hs-con[7].p[24], dut.dut.p[252])
+  net - (hs-con[6].p[22], dut.dut.p[255])
+  net - (hs-con[7].p[22], dut.dut.p[258])
+  net - (hs-con[6].p[20], dut.dut.p[259])
+  net - (hs-con[7].p[20], dut.dut.p[260])
+  net - (hs-con[6].p[18], dut.dut.p[261])
+  net - (hs-con[7].p[18], dut.dut.p[262])
+  net - (hs-con[6].p[16], dut.dut.p[263])
+  net - (hs-con[7].p[16], dut.dut.p[264])
+  net - (hs-con[6].p[14], dut.dut.p[265])
+  net - (hs-con[7].p[14], dut.dut.p[270])
+  net - (hs-con[6].p[12], dut.dut.p[272])
+  net - (hs-con[7].p[12], dut.dut.p[273])
+  net - (hs-con[6].p[10], dut.dut.p[274])
+  net - (hs-con[7].p[10], dut.dut.p[275])
+  net - (hs-con[6].p[8], dut.dut.p[276])
+  net - (hs-con[7].p[8], dut.dut.p[277])
+  net - (hs-con[6].p[6], dut.dut.p[278])
+  net - (hs-con[7].p[6], dut.dut.p[280])
+  net - (hs-con[6].p[4], dut.dut.p[283])
+  net - (hs-con[7].p[4], dut.dut.p[286])
+  net - (hs-con[6].p[2], dut.dut.p[287])
+  net - (hs-con[7].p[2], dut.dut.p[288])
+  net - (hs-con[6].p[0], dut.dut.p[289])
+  net - (hs-con[7].p[0], dut.dut.p[290])
+  net - (hs-con[6].p[30], dut.dut.p[291])
+  net - (hs-con[7].p[30], dut.dut.p[292])
+  net - (test-con[2].p[30], dut.dut.p[50])
+  net - (test-con[3].p[30], dut.dut.p[51])
+  net - (test-con[2].p[28], dut.dut.p[52])
+  net - (test-con[3].p[28], dut.dut.p[53])
+  net - (test-con[2].p[26], dut.dut.p[58])
+  net - (test-con[3].p[26], dut.dut.p[59])
+  net - (test-con[2].p[24], dut.dut.p[60])
+  net - (test-con[3].p[24], dut.dut.p[61])
+  net - (test-con[2].p[22], dut.dut.p[62])
+  net - (test-con[3].p[22], dut.dut.p[63])
+  net - (test-con[2].p[20], dut.dut.p[65])
+  net - (test-con[3].p[20], dut.dut.p[66])
+  net - (test-con[2].p[18], dut.dut.p[67])
+  net - (test-con[3].p[18], dut.dut.p[68])
+  net - (test-con[2].p[16], dut.dut.p[71])
+  net - (test-con[3].p[16], dut.dut.p[72])
+  net - (test-con[2].p[14], dut.dut.p[73])
+  net - (test-con[3].p[14], dut.dut.p[74])
+  net - (test-con[2].p[12], dut.dut.p[75])
+  net - (test-con[3].p[12], dut.dut.p[76])
+  net - (test-con[2].p[10], dut.dut.p[77])
+  net - (test-con[3].p[10], dut.dut.p[78])
+  net - (test-con[2].p[8], dut.dut.p[79])
+  net - (test-con[3].p[8], dut.dut.p[80])
+  net - (test-con[2].p[6], dut.dut.p[85])
+  net - (test-con[3].p[6], dut.dut.p[86])
+  net - (test-con[2].p[4], dut.dut.p[87])
+  net - (test-con[3].p[4], dut.dut.p[88])
+  net - (test-con[2].p[2], dut.dut.p[93])
+  net - (test-con[3].p[2], dut.dut.p[94])
+  net - (test-con[2].p[0], dut.dut.p[95])
+  net - (test-con[3].p[0], dut.dut.p[96])
+  net - (test-con[0].p[0], dut.dut.p[97])
+  net - (test-con[1].p[0], dut.dut.p[98])
+  net - (test-con[0].p[2], dut.dut.p[99])
+  net - (test-con[1].p[2], dut.dut.p[100])
+  net - (test-con[0].p[4], dut.dut.p[105])
+  net - (test-con[1].p[4], dut.dut.p[106])
+  net - (test-con[0].p[6], dut.dut.p[107])
+  net - (test-con[1].p[6], dut.dut.p[108])
+  net - (test-con[0].p[8], dut.dut.p[115])
+  net - (test-con[1].p[8], dut.dut.p[116])
+  net - (test-con[0].p[10], dut.dut.p[117])
+  net - (test-con[1].p[10], dut.dut.p[118])
+  net - (test-con[0].p[12], dut.dut.p[119])
+  net - (test-con[1].p[12], dut.dut.p[120])
+  net - (test-con[0].p[14], dut.dut.p[121])
+  net - (test-con[1].p[14], dut.dut.p[122])
+  net - (test-con[0].p[16], dut.dut.p[123])
+  net - (test-con[1].p[16], dut.dut.p[124])
+  net - (test-con[0].p[18], dut.dut.p[125])
+  net - (test-con[1].p[18], dut.dut.p[126])
+  net - (test-con[0].p[20], dut.dut.p[129])
+  net - (test-con[1].p[20], dut.dut.p[130])
+  net - (test-con[0].p[22], dut.dut.p[131])
+  net - (test-con[1].p[22], dut.dut.p[132])
+  net - (test-con[0].p[24], dut.dut.p[134])
+  net - (test-con[1].p[24], dut.dut.p[135])
+  net - (test-con[0].p[26], dut.dut.p[137])
+  net - (test-con[1].p[26], dut.dut.p[138])
+  net - (test-con[0].p[28], dut.dut.p[139])
+  net - (test-con[1].p[28], dut.dut.p[140])
+  net - (test-con[0].p[30], dut.dut.p[253])
+  net - (test-con[1].p[30], dut.dut.p[254])
+
+  for j in 0 to tc-rows do :
+    for i in 0 to 4 do :
+      net - (power-con.p[0], test-con[i].p[j * 2 + 1])
+    for h in 0 to 10 do :
+      net - (power-con.p[0], hs-con[h].p[j * 2 + 1])
+
+  inst fc : {diff-clk-fanout(8)}
+  inst clk-in : {diff-sma-wrapper(true)}
+  net CLK-FAST (clk-in.diff, fc.clkin)
+  net - (fc.vcc, pc-1v8.dst)
+  net - (clk-in.gnd, pc-1v8.dst.neg)
+
+  for i in 0 to 8 do :
+    net - (dut.fast-clk[i], fc.clkout[i])
+
+  package(hs-con[0]) at loc(0.0, -20.0, -90.0) on Top
+  package(hs-con[1]) at loc(0.0, -28.0, -90.0) on Top
+  package(hs-con[2]) at loc(0.0, -36.0, -90.0) on Top
+  package(hs-con[3]) at loc(0.0, 20.0, 90.0) on Top
+  package(hs-con[4]) at loc(0.0, 28.0, 90.0) on Top
+  package(hs-con[5]) at loc(0.0, 36.0, 90.0) on Top
+  package(hs-con[6]) at loc(22.0, 0.0, 0.0) on Top
+  package(hs-con[7]) at loc(30.0, 0.0, 0.0) on Top
+  package(hs-con[8]) at loc(-22.0, 0.0, 180.0) on Top
+  package(hs-con[9]) at loc(-30.0, 0.0, 180.0) on Top
+  package(dut) at loc(-7.9, -7.9) on Top
+  package(test-con[0]) at loc(0.0, 44.0, 90.0) on Top
+  package(test-con[1]) at loc(0.0, 52.0, 90.0) on Top
+  package(test-con[2]) at loc(0.0, -44.0, -90.0) on Top
+  package(test-con[3]) at loc(0.0, -52.0, -90.0) on Top
+
+  sch-lay-grp([ [fc clk-in] 
+                [dut decouple-caps r-lvds] 
+                [pc-3v3 pc-1v8 pc-0v8 pc-0v9 power-con]
+                [ferric ls] 
+                [hs-con]
+                [jt]
+                [t rs232]
+                [r-b]
+                [test-con]
+                [sys-clk-select]])
+
+  geom(Ref("GND")) :
+    plane(isolate = 0.13, rank = 0) on layer(1) = brd-outline
+    plane(isolate = 0.13, rank = 0) on layer(3) = brd-outline
+    plane(isolate = 0.13, rank = 0) on layer(6) = brd-outline
+    plane(isolate = 0.13, rank = 0) on layer(8) = brd-outline
+  
+  geom(Ref("P1v8-FS")) : 
+    plane(isolate = 0.13, rank = 0) on layer(2) = brd-outline
+  geom(Ref("P3v3-FS")) : 
+    plane(isolate = 0.13, rank = 0) on layer(7) = brd-outline
+ 
+;==== Board ====================================================================
+
+defn make-chips-board () :
+  
+  pcb-board B :
+    stackup = tempo-automation-10-layer-62-mil
+    boundary = brd-outline 
+    signal-boundary = brd-outline 
+
+  make-board(chips) :
+    board = B
+    rules = tempo-automation-adv-rules
+
+;==== Schematic ================================================================
+
+defn make-chips-schematic () :
+  make-schematic(chips)
+
+;==== Project ==================================================================
+
+defn make-chips-project () :
+  make-chips-schematic()
+  make-chips-board()
+
+make-chips-project()
+
+; jitpcb/repl-lib/dump-place-esir("scratchpad")

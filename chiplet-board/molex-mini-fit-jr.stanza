@@ -1,0 +1,50 @@
+#use-added-syntax(jitx)
+defpackage molex-mini-fit-jr :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import utils/time
+
+
+public pcb-landpattern molex-mini-fit-jr-lp (n-pins:Int) :
+  for (i in 1 through n-pins, l in grid-locs(2, n-pins / 2, 4.2, 5.5)) do :
+    pad p[i] : pth-pad(0.625) at loc(0.0, 0.0) * l
+  val width = to-double(n-pins / 2) * 4.2 + 3.1 * 2.0
+  layer(Courtyard(Top)) = Rectangle(width, 9.6)
+  layer(Courtyard(Bottom)) = Rectangle(width, 9.6)
+  layer(Silkscreen("F-SilkS", Top)) = LineRectangle(width, 9.6)
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.25, [Point(1.7, -5.0), Point(-1.7, -5.0)])
+
+  ref-label()
+
+public pcb-component component (n-pins:Int) :
+  if (n-pins > 24 or n-pins < 2) :
+    fatal("Incorrect number of pins for Molex Mini-fit Jr. %_" % [n-pins])
+  reference-prefix = "J"
+
+  manufacturer = "Molex"
+  if n-pins >= 10 :
+    mpn = to-string("39-28-1%_3" % [n-pins])
+  else :
+    mpn = to-string("39-28-10%_3" % [n-pins])
+
+  port p : pin[[1 through n-pins]]
+
+  pin-properties :
+    [pin:Ref     | pads:Int ...   | side:Dir]
+    for i in 1 through n-pins do :
+      [p[i] | i | if i % 2 == 0 : Left else : Right]
+
+  assign-landpattern(molex-mini-fit-jr-lp(n-pins))
+  make-box-symbol()
