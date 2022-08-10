@@ -14,6 +14,7 @@ defpackage samtec-tle :
   import ocdb/checks
   import ocdb/box-symbol
   import ocdb/symbols
+  import ocdb/tolerance
   import utils/time
 
 public pcb-landpattern samtec-tle-lp (n-row:Int):
@@ -27,19 +28,20 @@ public pcb-landpattern samtec-tle-lp (n-row:Int):
   
   for i in 0 to n-row do :
     for j in 0 to n-col do :
-      pad p[n-col * i + j + 1] : smd-pad(1.685, 1.1) at l0 * loc(to-double(j) * row-pitch, (- to-double(i) * pin-pitch))
+      pad p[n-col * i + j] : smd-pad(1.685, 1.1) at l0 * loc(to-double(j) * row-pitch, (- to-double(i) * pin-pitch))
 
-  layer(Cutout()) = Union(
-    [symmetric-about-y(
-      [Circle(0.0, (pin-pitch * (to-double(n-row) - 2.0)) / 2.0, 0.76 / 2.0)]) 
-      Circle(0.38) * grid-locs(n-row, 2, pin-pitch, pin-pitch)])
+
+  val locs = grid-locs(n-row, 2, pin-pitch, pin-pitch)
+  val sub-shapes1 = [symmetric-about-y([Circle(0.0, (pin-pitch * (to-double(n-row) - 2.0)) / 2.0, 0.76 / 2.0)])]
+  val sub-shapes2 = seq({_ * Circle(0.38)}, locs)
+  layer(Cutout()) = Union $ to-tuple $ cat(sub-shapes1, sub-shapes2)
 
   layer(Courtyard(Top)) = Rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
   layer(Silkscreen("F-SilkS", Top)) = LineRectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
   layer(Courtyard(Bottom)) = Rectangle(6.25, to-double(n-row) * pin-pitch + 0.5)
   ref-label()
 
-public pcb-component samtec-tle (n-row:Int) :
+public pcb-component component (n-row:Int) :
   port p : pin[n-row * 2]
 
   manufacturer = "Samtec"
@@ -47,8 +49,8 @@ public pcb-component samtec-tle (n-row:Int) :
 
   pin-properties :
     [pin:Ref     | pads:Int ...   | side:Dir]
-    for i in 0 through n-row * 2 do :
-      [p[i + 1] | i + 1 | if i % 2 == 0 : Left else : Right]
+    for i in 0 to n-row * 2 do :
+      [p[i] | i | if i % 2 == 0 : Left else : Right]
 
   assign-landpattern(samtec-tle-lp(n-row))
 

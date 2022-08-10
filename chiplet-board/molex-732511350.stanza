@@ -1,0 +1,54 @@
+#use-added-syntax(jitx)
+defpackage molex-732511350 :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+
+public pcb-component component :
+  pin sig
+  pin gnd-0
+  pin gnd-1
+  pin gnd-2
+  pin gnd-3    
+
+  manufacturer = "Molex"
+  mpn = "0732511350"
+  reference-prefix = "J"
+
+  pin-properties :
+    [pin:Ref | pads:Int ... | side: Dir]
+    [sig   | 0 | Left ]
+    [gnd-0 | 1 | Down ]
+    [gnd-1 | 2 | Down ]
+    [gnd-2 | 3 | Down ]
+    [gnd-3 | 4 | Down ]
+    
+  make-box-symbol()
+  assign-landpattern(molex-732511350-pkg)
+
+;Right angle SMA
+pcb-landpattern molex-732511350-pkg :
+  pad p[0] : smd-pad(1.52, 1.52) at loc(0.0, 0.0)
+  for (i in 1 to 5, l in grid-locs(2, 2, 4.75, 4.75)) do :
+    pad p[i] : smd-pad(1.91, 1.91) at loc(0.0, 0.0) * l
+
+;[strip]
+  layer(ForbidCopper(LayerIndex(1))) = Circle(0.0, 0.0, 2.5)
+  layer(Courtyard(Top)) = Rectangle(6.75, 6.75)
+  layer(Courtyard(Bottom)) = Rectangle(6.75, 6.75)
+  layer(Silkscreen("f-silk",Top)) = LineRectangle(6.75, 6.75)
+;[strip]

@@ -1,0 +1,57 @@
+#use-added-syntax(jitx)
+defpackage SN74LVC1G125 :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+pcb-landpattern SOT23-5N :
+  name = "SOT23-5N"
+
+  val pitch = 0.95
+  val halfy = 2.4 / 2.0
+  val pin-pad = smd-pad(0.7, 1.0)
+  pad p[0] : smd-pad(0.7, 1.0) at loc((- pitch), (- halfy))
+  pad p[1] : smd-pad(0.7, 1.0) at loc(0.0, (- halfy))
+  pad p[2] : smd-pad(0.7, 1.0) at loc(pitch, (- halfy))
+  pad p[3] : smd-pad(0.7, 1.0) at loc(pitch, halfy)
+  pad p[4] : smd-pad(0.7, 1.0) at loc((- pitch), halfy)
+
+;[strip]
+  layer(Courtyard(Top)) = Rectangle(3.2, 3.0)
+  layer(Silkscreen("f-silk", Top)) = LineRectangle(3.05, 1.75)
+;[strip]
+
+
+pcb-component component :
+  name = "SN74LVC1G125"
+  pin oe
+  pin a
+  pin y
+  pin vs-
+  pin vs+
+
+  package = SOT23-5N(
+    oe => p[0]
+    a => p[1]
+    y => p[3]
+    vs- => p[2]
+    vs+ => p[4])
+
+  make-box-symbol $ [
+    Left => [oe a y  vs- vs+]]
+  
+  manufacturer = "Texas Instruments"
+  mpn = "SN74LVC1G125DBVR"

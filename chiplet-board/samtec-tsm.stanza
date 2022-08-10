@@ -1,0 +1,52 @@
+#use-added-syntax(jitx)
+defpackage samtec-tsm :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+public pcb-landpattern samtec-tsm-lp (n-pin:Int):
+  val pin-pad = smd-pad(1.27, 3.68)
+  for (i in 0 to n-pin, l in grid-locs(C, n-pin / 2, 2, 4.95, 2.54)) do :
+    pad p[i] : pin-pad at loc(0.0, 0.0, 90.0) * l * loc(0.0, 0.0, 90.0)
+
+  val cyw = to-double(n-pin / 2) * 2.54
+  val cyh = 8.63
+  layer(Courtyard(Top)) = Rectangle(cyw, cyh)
+  layer(Silkscreen("f-silk",Top)) = LineRectangle(cyw, 5.08)
+  val x0 = to-double((n-pin / 2) - 1) * 2.54 / -2.0
+  layer(Silkscreen("pol",Top)) = Circle(x0, (cyh / -2.0) - 0.5, 0.25)
+  ref-label()
+
+public pcb-component component (n-pin:Int) :
+  port p : pin[n-pin]
+  manufacturer = "Samtec"
+  if n-pin % 2 != 0 :
+    fatal("Only even number of pins are supported for the Samtec TSM series")
+  val n-row = n-pin / 2
+  if n-row >= 10 :
+    mpn = to-string("TSM-1%_-01-T-DV-P" % [n-row])
+  else :
+    mpn = to-string("TSM-10%_-01-T-DV-P" % [n-row])
+  reference-prefix = "J"
+
+  pin-properties :
+    [pin:Ref     | pads:Int ...   | side:Dir]
+    for i in 0 to n-pin do :
+      [p[i] | i | if i % 2 == 0 : Left else : Right]
+
+  assign-landpattern(samtec-tsm-lp(n-pin))
+
+  make-box-symbol()

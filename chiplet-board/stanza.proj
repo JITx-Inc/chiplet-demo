@@ -1,3 +1,6 @@
 include "../open-components-database/stanza.proj"
 
 package molex-mini-fit-jr defined-in "molex-mini-fit-jr.stanza"
+package samtec-tle defined-in "samtec-tle.stanza"
+package samtec-tsm defined-in "samtec-tsm.stanza"
+package si53342 defined-in "si53342.stanza"

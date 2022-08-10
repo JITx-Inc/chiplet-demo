@@ -1,0 +1,55 @@
+#use-added-syntax(jitx)
+defpackage si53342 :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+
+public pcb-component component :
+  name = "SI53342"
+  manufacturer = "Skyworks"
+  mpn = "SI53342-B-GM"  
+  description = "Clock mux, 2:1 selectable MUX, Any-format, 2 banks / 3 Outputs, 1 OE per bank, dc to 1250 MHz, 24-QFN, 4 x 4 mm"
+  pin-properties :
+    [pin:Ref | pads:Int ... | side: Dir]
+    [OEAb    | 1  |  Left ]
+    [OEBb    | 18 |  Left ]
+    [CLK0    | 7  |  Left ]
+    [CLK0b   | 8  |  Left ]
+    [CLK1    | 11 |  Left ]
+    [CLK1b   | 12 |  Left ]
+    [CLK-SEL | 13 |  Left ]
+    [Q0      | 5  | Right ]
+    [Q0b     | 4  | Right ]
+    [Q1      | 3  | Right ]
+    [Q1b     | 2  | Right ]
+    [Q2      | 23 | Right ]
+    [Q2b     | 22 | Right ]
+    [Q3      | 21 | Right ]
+    [Q3b     | 20 | Right ]
+    [Q4      | 17 | Right ]
+    [Q4b     | 16 | Right ]
+    [Q5      | 15 | Right ]
+    [Q5b     | 14 | Right ]
+    [GND     | 25 |  Down ]
+    [VDD     | 6  |    Up ]
+    [VDDOA   | 24 |    Up ]
+    [VDDOB   | 19 |    Up ]
+    [NC1     | 9  |    Up ]
+    [NC2     | 10 |    Up ]
+
+  make-box-symbol()
+  assign-landpattern(QFN50P400X400X85-24)
