@@ -1,0 +1,84 @@
+
+#use-added-syntax(jitx)
+defpackage TRS3122E :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+public pcb-component component :
+  manufacturer = "Texas Instruments"
+  mpn = "TRS3122ERGER"
+
+  pin-properties :
+    [ pin:Ref   | pads:Int ...  | Side:Dir ]
+    [ C1+       |  21           |  Right   ]
+    [ C1-       |  16           |  Right   ]
+    [ C2+       |  22           |  Right   ]
+    [ C2-       |  23           |  Right   ]
+    [ C3+       |  1            |  Right   ]
+    [ C3-       |  2            |  Right   ]
+    [ DIN1      |  10           |  Left    ]
+    [ DIN2      |  9            |  Left    ]
+    [ ROUT1     |  12           |  Right   ]
+    [ ROUT2     |  11           |  Right   ]
+    [ FORCEON   |  15           |  Left    ]
+    [ nFORCEOFF |  14           |  Left    ]
+    [ V+        |  20           |  Up      ]
+    [ V-        |  24           |  Down    ]
+    [ DOUT1     |  5            |  Left    ]
+    [ DOUT2     |  6            |  Left    ]
+    [ RIN1      |  3            |  Left    ]
+    [ RIN2      |  4            |  Left    ]
+    [ INVALID   |  13           |  Left    ]
+    [ GND       |  17 25        |  Down    ]
+    [ NC0       |  7            |  Left    ]
+    [ NC1       |  8            |  Left    ]
+    [ VCC       |  19           |  Up      ]
+    [ VL        |  18           |  Up      ]
+
+  assign-landpattern(QFN50P410X410X100-24N)
+  make-box-symbol()
+
+public pcb-landpattern QFN50P410X410X100-24N :
+  name = "QFN50P410X410X100-24N"
+  make-qfn-landpattern(0.5, 4.1, 24, 0.24, 0.38, false)
+  pad p[25] : smd-pad(2.7,2.7) at loc(0.0, 0.0)
+  ref-label()
+
+public pcb-module module :
+; RS232 transceiver configured for 1.8V operation 
+  port urt : uart()
+  ; TODO what is a capability really? A voltage level? A bit syntax? Should RS232 be its own capability?
+  port rs232 : uart()
+  port src-vio : power
+
+  inst t : TRS3122E/component
+  inst c : gen-cap-cmp(0.1e-6)[6]
+  inst c-l : gen-cap-cmp(1.0e-6)
+  net (t.C1+, c[0].p[1])
+  net (t.C2+, c[1].p[1])
+  net (t.C3+, c[2].p[1])
+  net (t.C1-, c[0].p[2])
+  net (t.C2-, c[1].p[2])
+  net (t.C3-, c[2].p[2])
+  net (t.V+, c[3].p[1])
+  net (t.V-, c[4].p[1])
+  net (t.VCC, c[5].p[1], t.VL, c-l.p[1], src-vio.vdd, t.FORCEON, t.nFORCEOFF)
+  for i in 3 to 6 do : net (t.GND, t.DIN2, t.RIN2, src-vio.gnd, c-l.p[2], c[i].p[2])
+  net (urt.tx, t.DIN1)
+  net (urt.rx, t.ROUT1)
+  net RS232-TX (rs232.tx, t.DOUT1)
+  net RS232-RX (rs232.rx, t.RIN1)

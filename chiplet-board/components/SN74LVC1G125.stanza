@@ -17,41 +17,32 @@ defpackage SN74LVC1G125 :
   import ocdb/tolerance
   import utils/time
 
-pcb-landpattern SOT23-5N :
+pcb-landpattern SOT23-5N-TI :
   name = "SOT23-5N"
-
   val pitch = 0.95
   val halfy = 2.4 / 2.0
   val pin-pad = smd-pad(0.7, 1.0)
-  pad p[0] : smd-pad(0.7, 1.0) at loc((- pitch), (- halfy))
-  pad p[1] : smd-pad(0.7, 1.0) at loc(0.0, (- halfy))
-  pad p[2] : smd-pad(0.7, 1.0) at loc(pitch, (- halfy))
-  pad p[3] : smd-pad(0.7, 1.0) at loc(pitch, halfy)
-  pad p[4] : smd-pad(0.7, 1.0) at loc((- pitch), halfy)
+  pad p[1] : pin-pad at loc((- pitch), (- halfy))
+  pad p[2] : pin-pad at loc(0.0, (- halfy))
+  pad p[3] : pin-pad at loc(pitch, (- halfy))
+  pad p[4] : pin-pad at loc(pitch, halfy)
+  pad p[5] : pin-pad at loc((- pitch), halfy)
 
-;[strip]
   layer(Courtyard(Top)) = Rectangle(3.2, 3.0)
   layer(Silkscreen("f-silk", Top)) = LineRectangle(3.05, 1.75)
-;[strip]
 
-
-pcb-component component :
+public pcb-component component :
   name = "SN74LVC1G125"
-  pin oe
-  pin a
-  pin y
-  pin vs-
-  pin vs+
-
-  package = SOT23-5N(
-    oe => p[0]
-    a => p[1]
-    y => p[3]
-    vs- => p[2]
-    vs+ => p[4])
-
-  make-box-symbol $ [
-    Left => [oe a y  vs- vs+]]
-  
   manufacturer = "Texas Instruments"
   mpn = "SN74LVC1G125DBVR"
+
+  pin-properties :
+    [pin:Ref  | pads:Int ... | side:Dir ]
+    [ oe      | 1            | Left     ]
+    [ a       | 2            | Left     ]
+    [ y       | 3            | Right    ]
+    [ vs-     | 4            | Down     ]
+    [ vs+     | 5            | Up       ]
+
+  make-box-symbol()
+  assign-landpattern(SOT23-5N-TI) 

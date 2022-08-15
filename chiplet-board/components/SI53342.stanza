@@ -1,5 +1,5 @@
 #use-added-syntax(jitx)
-defpackage si53342 :
+defpackage SI53342 :
   import core
   import math
   import collections

@@ -1,0 +1,96 @@
+#use-added-syntax(jitx)
+defpackage SIP-IC :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+public pcb-component component :
+  val num-pins:Int = 318
+  port p : pin[318]
+
+  pin-properties :
+    [ pin:Ref | pads:Int ... | side:Dir ]
+    defn side (i:Int) :
+      if i % 10 < 5 : Left
+      else : Right
+    for i in 0 to num-pins do :
+      [  p[i] |   i    |  side(i)  ]
+
+  make-box-symbol()
+  assign-landpattern(SIP-IC-lp)
+
+
+pcb-landpattern SIP-IC-lp :
+  val pin-pad  = smd-pad(0.1397, 0.1397)
+  val bond-pad = smd-pad(16.0, 16.0)
+
+  val offs = 0.7
+
+  var pad-row = row-locs(W, 100, 0.3)
+  val extra = 0.0
+  var top-pad-row = row-locs(W, 100, (0.3 + extra))
+  var start-x = 550.0e-3 - extra * 49.0 / 2.0
+  var start-y = 114.0e-3 - offs - 1.25
+
+  for (i in 0 to 50, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 1000.0e-3 - extra * 46.0 / 2.0
+  start-y = 314.0e-3 - offs
+
+  for (i in 50 to 97, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 1000.0e-3 - extra * 46.0 / 2.0
+  start-y = 15490.0e-3 + offs
+
+  for (i in 97 to 144, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 550.0e-3 - extra * 49.0 / 2.0
+  start-y = 15690.0e-3 + offs + 1.25
+
+  for (i in 144 to 194, l in top-pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y) * l
+
+  start-x = 250.0e-3 - offs
+  start-y = 838.0e-3
+
+  for (i in 194 to 243, l in pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y, 90.0) * l
+
+  start-x = 15550.0e-3 + offs
+  start-y = 538.0e-3
+
+  for (i in 243 to 293, l in pad-row) do :
+    pad p[i] : pin-pad at loc(start-x, start-y, 90.0) * l
+
+  pad p[293] : bond-pad at loc(7900.0e-3, 7900.0e-3)
+
+  val ppads = to-seq(294 to false)
+  val pxlocs = [-1.2, -0.9, -0.6, 0.6, 0.9, 1.2]
+
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + 0.0, 11.0 + 7.9) * loc(l, 0.0)
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + 11.0, 0.0 + 7.9, -90.0) * loc(l, 0.0) 
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + 0.0, -11.0 + 7.9, 180.0) * loc(l, 0.0)
+  for l in pxlocs do :
+    pad p[next(ppads)] : pin-pad at loc(7.9 + -11.0, 0.0 + 7.9, 090.0) * loc(l, 0.0)
+
+  layer(Courtyard(Top)) = Rectangle(16.0 + 2.0 * offs + 0.6 + 6.0, 16.0 + 2.0 * offs + 0.6 + 6.0, loc(7900.0e-3, 7900.0e-3))
+  ref-label()

@@ -1,0 +1,37 @@
+#use-added-syntax(jitx)
+defpackage LG-L29K-F2J1-24 :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import utils/time
+
+pcb-landpattern LEDSC16080X80 :
+  ; TODO: update geom, use a and c pins?
+  make-ipc-two-pin-landpattern("1608m")
+  layer(Silkscreen("pol",Top)) = Line(0.25, [Point(2.0, -1.0), Point(2.0, 1.0)])
+
+
+public pcb-component component :
+  val sym = diode-sym(DiodeLED)
+
+  pin-properties :
+    [ pin:Ref  |  pads:Int ... ]
+    [ a        |  1            ]
+    [ c        |  2            ]
+
+  symbol = sym(self.a => sym.a, self.c => sym.c)
+  assign-landpattern(LEDSC16080X80) ; (a => p[0], c => p[1]))
+  manufacturer = "Osram Opto"
+  mpn = "LG L29K-F2J1-24"
+  reference-prefix = "D"

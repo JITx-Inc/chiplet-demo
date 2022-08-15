@@ -27,21 +27,17 @@ public pcb-landpattern CST3C-lp :
   ref-label()
 
 public pcb-component component :
-  ; description = "MOSFET N-CH 20V 0.18A"
-  pin d
-  pin s
-  pin g
+  description = "MOSFET N-CH 20V 0.18A"
   manufacturer = "Toshiba"
   mpn = "SSM3K35CTC"
+  reference-prefix = "Q"
   pin-properties :
-    [ pin:Ref | pads:Int ... | Side:Dir    ]
-    [ g      | 1              | Left ]
-    [ s      | 2              | Down ]
-    [ d      | 3              | Up ]
+    [ pin:Ref | pads:Int ...   | Side:Dir ]
+    [ g       | 1              | Left     ]
+    [ s       | 2              | Down     ]
+    [ d       | 3              | Up       ]
     
   val sym = fet-sym(FETNmos, FETEnhancement, true, false)
-  symbol = sym(d => sym.d, s => sym.s, g => sym.g)
+  symbol = sym(self.d => sym.d, self.s => sym.s, self.g => sym.g)
 
-  reference-prefix = "Q"
-  assign-landpattern(CST3C-lp) ; package = CST3C-pkg(cmp-pad-map(ps))
-  ; description = "MOSFET N-CH 20V 0.18A"
+  assign-landpattern(CST3C-lp)

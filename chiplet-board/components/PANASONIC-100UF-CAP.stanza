@@ -1,0 +1,46 @@
+#use-added-syntax(jitx)
+defpackage PANASONIC-100UF :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+  import ocdb/symbol-utils
+
+public pcb-component component :
+
+  manufacturer = "Panasonic"
+  mpn = "EEEFPE101XAP"
+  reference-prefix = "C"
+  val sym = capacitor-sym(CapacitorPolarized) ; (a => p[0], c => p[1])
+
+  pin-properties :
+    [ pin:Ref  |  pads:Int ... ]
+    [ a        |  1            ]
+    [ c        |  2            ]
+
+  assign-landpattern(CAPAE6300X7700) ; (a => p[0], c => p[1])
+  symbol = sym(self.a => sym.p[1], self.c => sym.p[2])
+
+pcb-landpattern CAPAE6300X7700 :
+  make-two-pin-landpattern(8.2, 1.8, 1.6, 14.0, 17.0)
+
+  layer(Silkscreen("pol",Top)) = plus-symbol(-5.0, 0.0)
+
+
+public defn plus-symbol (x:Double, y:Double) :
+  Union $ [
+    Line(0.254, [Point(x - 0.5, y), Point(x + 0.5, y) ])
+    Line(0.254, [Point(x, y - 0.5), Point(x, y + 0.5) ])
+  ]

@@ -1,0 +1,73 @@
+#use-added-syntax(jitx)
+defpackage SN74AVC4T774RGYR :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import utils/time
+  
+  ;SN74AVC4T774RGYR
+
+pcb-landpattern SN74AVC4T774RGYR-lp :
+  name = "SN74AVC4T774RGYR"
+  ; Can't use standard qfn generators for this one, it has skipped pins and nonstandard
+  ; numbering
+  val paddle = smd-pad(2.55, 2.05)
+  pad p[16] : paddle at loc(0.0, 0.0)
+
+  val pw = 0.28 ; pad width
+  val ph = 0.85 ; pad height
+  val sidepad = smd-pad(ph,pw)
+  val toppad = smd-pad(pw,ph)
+  ; Do the pins at the ends first
+  pad p[0] : sidepad at loc(-1.975,-0.75)
+  pad p[7] : sidepad at loc( 1.975,-0.75)
+  pad p[8] : sidepad at loc( 1.975, 0.75)
+  pad p[15] : sidepad at loc(-1.975, 0.75)
+
+  ; Pins at the side
+  for i in 0 to 6 do:
+    pad p[i + 1] : toppad at loc(-1.25 + (0.5 * to-double(i)), -1.725)
+  for i in 0 to 6 do:
+    pad p[i + 9] : toppad at loc( 1.25 - (0.5 * to-double(i)),  1.725)
+  layer(Courtyard(Top)) = Rectangle(4.8, 4.3)
+  layer(Silkscreen("pol", Top)) = Circle(-2.6, -0.75, 0.254)
+
+
+public pcb-component component :
+  name = "SN74AVC4T774RGYR"
+  manufacturer = "Texas Instruments"
+  mpn = " SN74AVC4T774RGYR"
+
+  pin-properties :
+    [ pin:Ref   |  pads:Int ... |  Side:Dir ]
+    [ A1        |  2            |   Left  ]
+    [ A2        |  3            |   Left  ]
+    [ A3        |  4            |   Left  ]
+    [ A4        |  5            |   Left  ]
+    [ DIR1      |  0            |   Left  ]
+    [ DIR2      |  1            |   Left  ]
+    [ DIR3      |  6            |   Left  ]
+    [ DIR4      |  7            |   Left  ]
+    [ nOE       |  8            |   Left  ]
+    [ B1        |  13           |   Right ]
+    [ B2        |  12           |   Right ]
+    [ B3        |  11           |   Right ]
+    [ B4        |  10           |   Right ]
+    [ GND       |  9 16         |   Down  ]
+    [ VDDA      |  15           |   Up    ]
+    [ VDDB      |  14           |   Up    ]
+
+  make-box-symbol()
+  assign-landpattern(SN74AVC4T774RGYR-lp)
+

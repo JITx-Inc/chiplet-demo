@@ -1,0 +1,46 @@
+#use-added-syntax(jitx)
+defpackage SiT8208 :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+
+public pcb-component component :
+  manufacturer = "SiTime"
+  mpn = "SiT8208AC-G1-18E-50.000000X"
+  reference-prefix = "X"
+
+  pin-properties : 
+    [ pin:Ref   | pads:Int ... | side:Dir ]
+    [OE         |      1       |  Left    ]
+    [OUT        |      3       |  Right   ]
+    [GND        |      2       |  Down    ]
+    [VDD        |      4       |  Up      ]
+
+  assign-landpattern(SiT8208-lp)
+  make-box-symbol()
+
+pcb-landpattern SiT8208-lp :
+  val x = 1.9 / 2.0
+  val y = 1.5 / 2.0
+  val pin-pad = smd-pad(1.1, 1.0)
+  pad p[1] : pin-pad at loc((- x), (- y))
+  pad p[2] : pin-pad at loc(x, (- y))
+  pad p[3] : pin-pad at loc(x, y)
+  pad p[4] : pin-pad at loc((- x), y)
+  layer(Courtyard(Top)) = Rectangle(2.7, 2.4)
+  layer(Silkscreen("f-silk",Top)) = LineRectangle(2.7, 2.4)
+  layer(Silkscreen("pol",Top)) = Circle((- x) - 0.5, (- y), 0.254)

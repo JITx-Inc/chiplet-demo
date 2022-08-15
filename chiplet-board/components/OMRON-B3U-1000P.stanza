@@ -1,0 +1,36 @@
+#use-added-syntax(jitx)
+defpackage OMRON-B3U-1000P :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+pcb-landpattern SW-B3U-1000P-lp :
+  ; TODO: update geom
+  make-two-pin-landpattern(4.2, 2.6, 1.7, 5.0, 8.0)
+
+public pcb-component component :
+  port p : pin[[1 2]]
+
+  manufacturer = "Omron"
+  mpn = "B3U-1000P"
+  reference-prefix = "S"
+  pin-properties :
+    [ pin:Ref  |  pads:Int ... ]
+    [ p[1]     |  1            ]
+    [ p[2]     |  2            ]
+  assign-landpattern(SW-B3U-1000P-lp)
+  make-box-symbol()
+

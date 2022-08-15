@@ -17,20 +17,21 @@ defpackage dut :
   import ocdb/tolerance
   import utils/time
 
-public pcb-module dut :
+public pcb-module my-dut :
   port p0v8 : power
   port p0v9 : power
   port vddio : power
   port vin : power
-  port jtag : jtag
-  port uart : uart
-  port pmb : pmb
+  port jtag : jtag()
+  port uart : uart()
+  port pmb : chiplet-board/pmb
   port test-pad : pin[64]
-  port bank : chips-bank[16]
+  port bank : chiplet-board/chips-bank[16]
   port fast-clk : diff-pair[8]
   port gpio: pin[4]
 
-  inst dut : chips-sip-cmp
+  public inst dut : SIP-IC/component
+
   place(dut) at loc(0.0, 0.0) on Top
 
   net AIB_A_CONFIG_DONE_00 (dut.p[236], bank[0].AIB_A_CONFIG_DONE)
@@ -39,8 +40,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_00 (dut.p[101], bank[0].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_00 (dut.p[238], bank[0].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_00 (dut.p[237], bank[0].AIB_B_TEST_OUT)
-  net FAST_CLK_00_N (dut.p[242], fast-clk[0].D_N)
-  net FAST_CLK_00_P (dut.p[241], fast-clk[0].D_P)
+  net FAST_CLK_00_N (dut.p[242], fast-clk[0].N)
+  net FAST_CLK_00_P (dut.p[241], fast-clk[0].P)
   net GPIO_00 (dut.p[221],  gpio[0])
   net LVDS_REXT_00 (dut.p[240], bank[0].LVDS_REXT)
   net OSC_A_DIV_CLK_00 (dut.p[234], bank[0].OSC_A_DIV_CLK)
@@ -53,8 +54,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_01 (dut.p[110], bank[1].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_01 (dut.p[153], bank[1].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_01 (dut.p[154], bank[1].AIB_B_TEST_OUT)
-  net FAST_CLK_01_N (dut.p[152], fast-clk[1].D_N)
-  net FAST_CLK_01_P (dut.p[150], fast-clk[1].D_P)
+  net FAST_CLK_01_N (dut.p[152], fast-clk[1].N)
+  net FAST_CLK_01_P (dut.p[150], fast-clk[1].P)
   net GPIO_01 (dut.p[216],  gpio[1])
   net LVDS_REXT_01 (dut.p[151], bank[1].LVDS_REXT)
   net OSC_A_DIV_CLK_01 (dut.p[155], bank[1].OSC_A_DIV_CLK)
@@ -67,8 +68,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_02 (dut.p[113], bank[2].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_02 (dut.p[176], bank[2].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_02 (dut.p[177], bank[2].AIB_B_TEST_OUT)
-  net FAST_CLK_02_N (dut.p[170], fast-clk[2].D_N)
-  net FAST_CLK_02_P (dut.p[172], fast-clk[2].D_P)
+  net FAST_CLK_02_N (dut.p[170], fast-clk[2].N)
+  net FAST_CLK_02_P (dut.p[172], fast-clk[2].P)
   net GPIO_02 (dut.p[270],  gpio[2])
   net LVDS_REXT_02 (dut.p[171], bank[2].LVDS_REXT)
   net OSC_A_DIV_CLK_02 (dut.p[178], bank[2].OSC_A_DIV_CLK)
@@ -81,8 +82,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_03 (dut.p[136], bank[3].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_03 (dut.p[288], bank[3].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_03 (dut.p[289], bank[3].AIB_B_TEST_OUT)
-  net FAST_CLK_03_N (dut.p[282], fast-clk[3].D_N)
-  net FAST_CLK_03_P (dut.p[284], fast-clk[3].D_P)
+  net FAST_CLK_03_N (dut.p[282], fast-clk[3].N)
+  net FAST_CLK_03_P (dut.p[284], fast-clk[3].P)
   net GPIO_03 (dut.p[265],  gpio[3])
   net LVDS_REXT_03 (dut.p[283], bank[3].LVDS_REXT)
   net OSC_A_DIV_CLK_03 (dut.p[290], bank[3].OSC_A_DIV_CLK)
@@ -95,8 +96,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_04 (dut.p[141], bank[4].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_04 (dut.p[274], bank[4].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_04 (dut.p[275], bank[4].AIB_B_TEST_OUT)
-  net FAST_CLK_04_N (dut.p[279], fast-clk[4].D_N)
-  net FAST_CLK_04_P (dut.p[281], fast-clk[4].D_P)
+  net FAST_CLK_04_N (dut.p[279], fast-clk[4].N)
+  net FAST_CLK_04_P (dut.p[281], fast-clk[4].P)
   net LVDS_REXT_04 (dut.p[280], bank[4].LVDS_REXT)
   net OSC_A_DIV_CLK_04 (dut.p[276], bank[4].OSC_A_DIV_CLK)
   net OSC_B_DIV_CLK_04 (dut.p[278], bank[4].OSC_B_DIV_CLK)
@@ -108,8 +109,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_05 (dut.p[128], bank[5].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_05 (dut.p[187], bank[5].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_05 (dut.p[188], bank[5].AIB_B_TEST_OUT)
-  net FAST_CLK_05_N (dut.p[186], fast-clk[5].D_N)
-  net FAST_CLK_05_P (dut.p[184], fast-clk[5].D_P)
+  net FAST_CLK_05_N (dut.p[186], fast-clk[5].N)
+  net FAST_CLK_05_P (dut.p[184], fast-clk[5].P)
   net LVDS_REXT_05 (dut.p[185], bank[5].LVDS_REXT)
   net OSC_A_DIV_CLK_05 (dut.p[189], bank[5].OSC_A_DIV_CLK)
   net OSC_B_DIV_CLK_05 (dut.p[191], bank[5].OSC_B_DIV_CLK)
@@ -121,8 +122,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_06 (dut.p[111], bank[6].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_06 (dut.p[165], bank[6].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_06 (dut.p[166], bank[6].AIB_B_TEST_OUT)
-  net FAST_CLK_06_N (dut.p[159], fast-clk[6].D_N)
-  net FAST_CLK_06_P (dut.p[161], fast-clk[6].D_P)
+  net FAST_CLK_06_N (dut.p[159], fast-clk[6].N)
+  net FAST_CLK_06_P (dut.p[161], fast-clk[6].P)
   net LVDS_REXT_06 (dut.p[160], bank[6].LVDS_REXT)
   net OSC_A_DIV_CLK_06 (dut.p[167], bank[6].OSC_A_DIV_CLK)
   net OSC_B_DIV_CLK_06 (dut.p[169], bank[6].OSC_B_DIV_CLK)
@@ -134,8 +135,8 @@ public pcb-module dut :
   net AIB_B_CONFIG_DONE_07 (dut.p[102], bank[7].AIB_B_CONFIG_DONE)
   net AIB_B_TEST_IN_07 (dut.p[225], bank[7].AIB_B_TEST_IN)
   net AIB_B_TEST_OUT_07 (dut.p[224], bank[7].AIB_B_TEST_OUT)
-  net FAST_CLK_07_N (dut.p[230], fast-clk[7].D_N)
-  net FAST_CLK_07_P (dut.p[232], fast-clk[7].D_P)
+  net FAST_CLK_07_N (dut.p[230], fast-clk[7].N)
+  net FAST_CLK_07_P (dut.p[232], fast-clk[7].P)
   net LVDS_REXT_07 (dut.p[231], bank[7].LVDS_REXT)
   net OSC_A_DIV_CLK_07 (dut.p[228], bank[7].OSC_A_DIV_CLK)
   net OSC_B_DIV_CLK_07 (dut.p[226], bank[7].OSC_B_DIV_CLK)
@@ -315,8 +316,8 @@ public pcb-module dut :
   net PMB_DAT (dut.p[25], pmb.dat)
   net UART_RX (dut.p[158], uart.rx)
   net UART_TX (dut.p[37], uart.tx)
-  net VDDIO (dut.p[143], dut.p[256], vddio.pos)
-  net VIN (dut.p[217], dut.p[218], dut.p[266], dut.p[267], vin.pos)
-  net VSS (dut.p[49], dut.p[219], dut.p[220], dut.p[268], dut.p[269], vddio.neg, vin.neg, p0v9.neg, p0v8.neg)
-  net - (dut.p[294], dut.p[295], dut.p[296], dut.p[300], dut.p[301], dut.p[302], dut.p[306], dut.p[307], dut.p[308], dut.p[312], dut.p[313], dut.p[314], p0v8.pos)
-  net - (dut.p[297], dut.p[298], dut.p[299], dut.p[303], dut.p[304], dut.p[305], dut.p[309], dut.p[310], dut.p[311], dut.p[315], dut.p[316], dut.p[317], p0v9.pos)
+  net VDDIO (dut.p[143], dut.p[256], vddio.vdd)
+  net VIN (dut.p[217], dut.p[218], dut.p[266], dut.p[267], vin.vdd)
+  net VSS (dut.p[49], dut.p[219], dut.p[220], dut.p[268], dut.p[269], vddio.gnd, vin.gnd, p0v9.gnd, p0v8.gnd)
+  net (dut.p[294], dut.p[295], dut.p[296], dut.p[300], dut.p[301], dut.p[302], dut.p[306], dut.p[307], dut.p[308], dut.p[312], dut.p[313], dut.p[314], p0v8.vdd)
+  net (dut.p[297], dut.p[298], dut.p[299], dut.p[303], dut.p[304], dut.p[305], dut.p[309], dut.p[310], dut.p[311], dut.p[315], dut.p[316], dut.p[317], p0v9.vdd)

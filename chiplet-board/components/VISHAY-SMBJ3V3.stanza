@@ -1,0 +1,32 @@
+#use-added-syntax(jitx)
+defpackage VISHAY-SMBJ3V3 :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/tolerance
+  import utils/time
+
+public pcb-component component :
+  name = "VISHAY-SMBJ3V3"
+  manufacturer = "Vishay"
+  mpn = "SMBJ3V3-E3/52"
+  reference-prefix = "D"
+  val sym = diode-sym(DiodeZener) ; (a => a, c => c)
+
+  pin-properties :
+    [ pin:Ref  |  pads:Int ... ]
+    [ a        |  1            ]
+    [ c        |  2            ]
+  assign-landpattern(DIOM-4539X220)
+  symbol = sym(self.a => sym.a, self.c => sym.c)
