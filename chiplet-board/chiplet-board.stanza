@@ -46,8 +46,8 @@ public pcb-bundle chips-bank :
 pcb-module pull-up-jumper (n:Int) :
   port vin : power
   port p : pin[n]
-  inst berg : samtec-tsm/component(n * 2)
-  place(berg) at loc(0.0, 0.0) on Top
+  public inst berg : samtec-tsm/component(n * 2)
+  ; place(berg) at loc(0.0, 0.0) on Top
   inst r-pu : gen-res-cmp(10.0e3)[n]
 
   for i in 0 to n do :
@@ -143,7 +143,7 @@ pcb-module reset-button :
 public pcb-module clock-fanout-jumper-select (n:Int) :
   port vin : power
   public inst b : buffer-fanout(n)
-  inst j : pull-up-jumper(n + 2)
+  public inst j : pull-up-jumper(n + 2)
 
   inst b-i : SN74LVC1G125/component[2]
   inst ext-sys-clk : sma-wrapper
@@ -181,7 +181,7 @@ public pcb-module diff-clk-fanout (n:Int) :
 
   inst b : SI53342/component[n-chips]
   inst c : gen-cap-cmp(1.0e-6)[n-chips]
-  inst j : samtec-tsm/component(n * 2)
+  public inst j : samtec-tsm/component(n * 2)
   ;val g-count = to-seq(0 to false)  
   for (i in 0 to n, n-idx in 0 to false) do :
     ;val n-idx = next(g-count)
@@ -207,7 +207,7 @@ pcb-module sma-wrapper :
   pin gnd
 
   inst conn : ocdb/johnson/142-0701-801/component
-  place(conn) at loc(0.0, 0.0) on Top
+  ; place(conn) at loc(0.0, 0.0) on Top
 
   net (sig, conn.sig)
   net (gnd, conn.gnd)
@@ -217,9 +217,9 @@ public pcb-module diff-sma-wrapper (end-launch:True|False) :
   pin gnd
 
   if end-launch == true :
-   inst sma : ocdb/johnson/142-0701-801/component[2]
-   place(sma[0]) at loc(0.0, 0.0) on Top
-   place(sma[1]) at loc(11.25, 0.0) on Top (relative-to sma[0])
+   public inst sma : ocdb/johnson/142-0701-801/component[2]
+  ;  place(sma[0]) at loc(0.0, 0.0) on Top
+  ;  place(sma[1]) at loc(11.25, 0.0) on Top (relative-to sma[0])
    net (diff.N, sma[0].sig)
    net (diff.P, sma[1].sig)
    net (gnd, sma[0].gnd)
@@ -227,8 +227,8 @@ public pcb-module diff-sma-wrapper (end-launch:True|False) :
 
   else :
    inst sma : molex-732511350/component[2]
-   place(sma[0]) at loc(0.0, 0.0) on Top
-   place(sma[1]) at loc(7.5, 0.0) on Top (relative-to sma[0])
+  ;  place(sma[0]) at loc(0.0, 0.0) on Top
+  ;  place(sma[1]) at loc(7.5, 0.0) on Top (relative-to sma[0])
    net (diff.N, sma[0].sig)
    net (diff.P, sma[1].sig)
    net (gnd, sma[0].gnd)
@@ -326,26 +326,24 @@ public defn power-decouple (max-v:Double) :
 public defn power-decouple () :
   power-decouple(10.0)
 
-
-
-
 ;==== Module ===================================================================
 
 val board-shape = Rectangle(4.0 * 25.4, 5.0 * 25.4)
 
 pcb-module my-design :
-  val tc-rows = 17
+  val tc-rows = 18
 
-  inst dut : dut/my-dut
+  inst dut : bga-dut/my-dut
   inst hs-con : samtec-tle/component(tc-rows)[10]
   inst test-con : samtec-tle/component(tc-rows)[4]
   inst sys-clk-select : clock-fanout-jumper-select(16)
-
+  place(sys-clk-select.j.berg) at loc(46.0, 41.0, 0.0) on Top
   inst r-b : reset-button
 
   ; Power protection
   inst power-con : molex-mini-fit-jr/component(10)
-  net GND (power-con.p[1], dut.vin.gnd, dut.vddio.gnd)
+  place(power-con) at loc(45.0, -40.0, -90.0) on Top
+  net GND (power-con.p[1], dut.dut.VSS, dut.dut.AVSS)
   for i in 1 to 5 do :
     net (power-con.p[5], power-con.p[i])
   inst pc-3v3 : power-conditioning(3.3, 1.0)
@@ -362,6 +360,8 @@ pcb-module my-design :
   net (power-con.p[1], pc-3v3.src.gnd, pc-1v8.src.gnd, pc-0v9.src.gnd, pc-0v8.src.gnd)
 
   net (dut.vin, dut.vddio, r-b.pow-vio, pc-1v8.dst, sys-clk-select.vin)
+  ; net (dut.dut.VIN, r-b.pow-vio, pc-1v8.dst, sys-clk-select.vin)
+  ; net (r-b.pow-vio, pc-1v8.dst, sys-clk-select.vin)
   net P0v8-FS (pc-0v8.dst.vdd, dut.p0v8.vdd)
   net P0v9-FS (pc-0v9.dst.vdd, dut.p0v9.vdd)
   net P1v8-FS (pc-1v8.dst.vdd)
@@ -381,18 +381,18 @@ pcb-module my-design :
     net (pc-0v9.dst, decouple-caps[i].src)
     place(decouple-caps[i]) on Bottom
 
-  short-trace(decouple-caps[0].c0.p[2], dut.dut.p[143])
-  short-trace(decouple-caps[1].c0.p[2], dut.dut.p[256])
-  short-trace(decouple-caps[2].c0.p[2], dut.dut.p[217])
-  short-trace(decouple-caps[3].c0.p[2], dut.dut.p[266])
-  short-trace(decouple-caps[4].c0.p[2], dut.dut.p[294])
-  short-trace(decouple-caps[5].c0.p[2], dut.dut.p[300])
-  short-trace(decouple-caps[6].c0.p[2], dut.dut.p[306])
-  short-trace(decouple-caps[7].c0.p[2], dut.dut.p[312])
-  short-trace(decouple-caps[8].c0.p[2], dut.dut.p[297])
-  short-trace(decouple-caps[9].c0.p[2], dut.dut.p[303])
-  short-trace(decouple-caps[10].c0.p[2], dut.dut.p[309])
-  short-trace(decouple-caps[11].c0.p[2], dut.dut.p[315])
+  ; short-trace(decouple-caps[0].c0.p[2], dut.dut.p[143])
+  ; short-trace(decouple-caps[1].c0.p[2], dut.dut.p[256])
+  ; short-trace(decouple-caps[2].c0.p[2], dut.dut.p[217])
+  ; short-trace(decouple-caps[3].c0.p[2], dut.dut.p[266])
+  ; short-trace(decouple-caps[4].c0.p[2], dut.dut.p[294])
+  ; short-trace(decouple-caps[5].c0.p[2], dut.dut.p[300])
+  ; short-trace(decouple-caps[6].c0.p[2], dut.dut.p[306])
+  ; short-trace(decouple-caps[7].c0.p[2], dut.dut.p[312])
+  ; short-trace(decouple-caps[8].c0.p[2], dut.dut.p[297])
+  ; short-trace(decouple-caps[9].c0.p[2], dut.dut.p[303])
+  ; short-trace(decouple-caps[10].c0.p[2], dut.dut.p[309])
+  ; short-trace(decouple-caps[11].c0.p[2], dut.dut.p[315])
 
   ; Ferric connector
   inst ferric : ocdb/phoenix/combicon-mc/component(3)
@@ -401,17 +401,17 @@ pcb-module my-design :
   
   net (ls[0].pwr-hv, ls[1].pwr-hv, pc-3v3.dst.vdd)
   net (ls[0].pwr-lv, ls[1].pwr-lv, pc-1v8.dst.vdd)
-  net dut_pmb_clk (ls[0].sig-lv, dut.pmb.clk)
+  net dut_pmb_clk (ls[0].sig-lv, dut.dut.PMB_CLK)
   net out_pmb_clk (ls[0].sig-hv, ferric.p[1])
-  net dut_pmb_dat (ls[1].sig-lv, dut.pmb.dat)
+  net dut_pmb_dat (ls[1].sig-lv, dut.dut.PMB_DAT)
   net out_pmb_dat (ls[1].sig-hv, ferric.p[2])
   net (ferric.p[3], pc-1v8.dst.gnd)
 
-  ; JTAG connector w/ level shifter
-  inst jt : arm-jtag-connector
-  net (jt.jtag,     dut.jtag)
-  net (jt.pow-vio,  pc-1v8.dst)
-  net (jt.pow-vout, pc-3v3.dst)
+  ; ; JTAG connector w/ level shifter
+  ; inst jt : arm-jtag-connector
+  ; net (jt.jtag,     dut.jtag)
+  ; net (jt.pow-vio,  pc-1v8.dst)
+  ; net (jt.pow-vout, pc-3v3.dst)
 
   ;RS232 Interface
   inst t : TRS3122E/module
@@ -419,253 +419,39 @@ pcb-module my-design :
   net (rs232.p[1], power-con.p[2])
   net (rs232.p[2], t.rs232.tx)
   net (rs232.p[3], t.rs232.rx)
-  net (dut.uart, t.urt)
+  net (dut.dut.UART_RX, t.urt.rx)
+  net (dut.dut.UART_TX, t.urt.tx)
   net (t.src-vio, pc-1v8.dst)
 
   ;LVDS pull resistors
   inst r-lvds : gen-res-cmp(11.8e3, 1.0)[16]
 
   for i in 0 to 16 do :
-    net (dut.bank[i].LVDS_REXT, r-lvds[i].p[1])
+    net (dut.dut.LVDS_REXT[i], r-lvds[i].p[1])
     net (power-con.p[1], r-lvds[i].p[2])
-    net (dut.bank[i].RESET_N, r-b.reset)
-    net (dut.bank[i].SYS_CLK, sys-clk-select.b.out[i])
-
-
+    net (dut.dut.RESET_N[i], r-b.reset)
+    net (dut.dut.SYS_CLK[i], sys-clk-select.b.out[i])
 
   ; Net to high speed connector
   defn connect-hs-cons (asgns:Tuple<Tuple<Int>>) :
     for (c in asgns, i in 0 to 4) do :
       for (b in c, j in 0 to 4) do :
-        net (dut.bank[b].LVDS_REXT hs-con[i].p[9 * j + 0])
-        net (dut.bank[b].AIB_A_TEST_IN hs-con[i].p[9 * j + 1])
-        net (dut.bank[b].AIB_B_TEST_IN hs-con[i].p[9 * j + 2])
-        net (dut.bank[b].AIB_B_TEST_OUT hs-con[i].p[9 * j + 3])
-        net (dut.bank[b].AIB_A_CONFIG_DONE hs-con[i].p[9 * j + 4])
-        net (dut.bank[b].SYS_CLK, sys-clk-select.b.out[b])
-        net (dut.bank[b].OSC_A_DIV_CLK hs-con[i].p[9 * j + 5])
-        net (dut.bank[b].OSC_B_DIV_CLK hs-con[i].p[9 * j + 6])
-        net (dut.bank[b].AIB_A_TEST_OUT hs-con[i].p[9 * j + 7])
-        net (dut.bank[b].AIB_B_CONFIG_DONE hs-con[i].p[9 * j + 8])
-        net (dut.bank[b].RESET_N, r-b.reset)
+        net (dut.dut.LVDS_REXT[b]         hs-con[i].p[9 * j + 0])
+        net (dut.dut.AIB_A_TEST_IN[b]     hs-con[i].p[9 * j + 1])
+        net (dut.dut.AIB_B_TEST_IN[b]     hs-con[i].p[9 * j + 2])
+        net (dut.dut.AIB_B_TEST_OUT[b]    hs-con[i].p[9 * j + 3])
+        net (dut.dut.AIB_A_CONFIG_DONE[b] hs-con[i].p[9 * j + 4])
+        net (dut.dut.OSC_A_DIV_CLK[b]     hs-con[i].p[9 * j + 5])
+        net (dut.dut.OSC_B_DIV_CLK[b]     hs-con[i].p[9 * j + 6])
+        net (dut.dut.AIB_A_TEST_OUT[b]    hs-con[i].p[9 * j + 7])
+        net (dut.dut.AIB_B_CONFIG_DONE[b] hs-con[i].p[9 * j + 8])
+        net (dut.dut.RESET_N[b], r-b.reset)
+        net (dut.dut.SYS_CLK[b], sys-clk-select.b.out[b])
 
-  ;connect-hs-cons([[9 14 10 13]
-  ;                [5 2 6 1]
-  ;                [12 11 4 3]
-  ;                [0 7 8 15]])
-
-  net (hs-con[0].p[30], dut.dut.p[3])
-  net (hs-con[1].p[30], dut.dut.p[4])
-  net (hs-con[2].p[30], dut.dut.p[7])
-  net (hs-con[0].p[28], dut.dut.p[8])
-  net (hs-con[1].p[28], dut.dut.p[9])
-  net (hs-con[2].p[28], dut.dut.p[10])
-  net (hs-con[0].p[26], dut.dut.p[11])
-  net (hs-con[1].p[26], dut.dut.p[12])
-  net (hs-con[2].p[26], dut.dut.p[15])
-  net (hs-con[0].p[24], dut.dut.p[16])
-  net (hs-con[1].p[24], dut.dut.p[18])
-  net (hs-con[2].p[24], dut.dut.p[20])
-  net (hs-con[0].p[22], dut.dut.p[21])
-  net (hs-con[1].p[22], dut.dut.p[22])
-  net (hs-con[2].p[22], dut.dut.p[23])
-  net (hs-con[0].p[20], dut.dut.p[24])
-  net (hs-con[1].p[20], dut.dut.p[27])
-  net (hs-con[2].p[20], dut.dut.p[28])
-  net (hs-con[0].p[18], dut.dut.p[30])
-  net (hs-con[1].p[18], dut.dut.p[32])
-  net (hs-con[2].p[18], dut.dut.p[33])
-  net (hs-con[0].p[16], dut.dut.p[34])
-  net (hs-con[1].p[16], dut.dut.p[35])
-  net (hs-con[2].p[16], dut.dut.p[36])
-  net (hs-con[0].p[14], dut.dut.p[39])
-  net (hs-con[1].p[14], dut.dut.p[42])
-  net (hs-con[2].p[14], dut.dut.p[43])
-  net (hs-con[0].p[12], dut.dut.p[44])
-  net (hs-con[1].p[12], dut.dut.p[45])
-  net (hs-con[2].p[12], dut.dut.p[46])
-  net (hs-con[0].p[10], dut.dut.p[47])
-  net (hs-con[1].p[10], dut.dut.p[48])
-  net (hs-con[2].p[10], dut.dut.p[54])
-  net (hs-con[0].p[8], dut.dut.p[56])
-  net (hs-con[1].p[8], dut.dut.p[64])
-  net (hs-con[2].p[8], dut.dut.p[69])
-  net (hs-con[0].p[6], dut.dut.p[81])
-  net (hs-con[1].p[6], dut.dut.p[83])
-  net (hs-con[2].p[6], dut.dut.p[90])
-  net (hs-con[0].p[4], dut.dut.p[91])
-  net (hs-con[3].p[0], dut.dut.p[101])
-  net (hs-con[4].p[0], dut.dut.p[102])
-  net (hs-con[5].p[0], dut.dut.p[110])
-  net (hs-con[3].p[2], dut.dut.p[111])
-  net (hs-con[4].p[2], dut.dut.p[113])
-  net (hs-con[5].p[2], dut.dut.p[128])
-  net (hs-con[3].p[4], dut.dut.p[136])
-  net (hs-con[4].p[4], dut.dut.p[141])
-  net (hs-con[5].p[4], dut.dut.p[146])
-  net (hs-con[3].p[6], dut.dut.p[148])
-  net (hs-con[4].p[6], dut.dut.p[149])
-  net (hs-con[5].p[6], dut.dut.p[151])
-  net (hs-con[3].p[8], dut.dut.p[153])
-  net (hs-con[4].p[8], dut.dut.p[154])
-  net (hs-con[5].p[8], dut.dut.p[155])
-  net (hs-con[3].p[10], dut.dut.p[156])
-  net (hs-con[4].p[10], dut.dut.p[157])
-  net (hs-con[5].p[10], dut.dut.p[160])
-  net (hs-con[3].p[12], dut.dut.p[163])
-  net (hs-con[4].p[12], dut.dut.p[164])
-  net (hs-con[5].p[12], dut.dut.p[165])
-  net (hs-con[3].p[14], dut.dut.p[166])
-  net (hs-con[4].p[14], dut.dut.p[167])
-  net (hs-con[5].p[14], dut.dut.p[168])
-  net (hs-con[3].p[16], dut.dut.p[169])
-  net (hs-con[4].p[16], dut.dut.p[171])
-  net (hs-con[5].p[16], dut.dut.p[174])
-  net (hs-con[3].p[18], dut.dut.p[175])
-  net (hs-con[4].p[18], dut.dut.p[176])
-  net (hs-con[5].p[18], dut.dut.p[177])
-  net (hs-con[3].p[20], dut.dut.p[178])
-  net (hs-con[4].p[20], dut.dut.p[179])
-  net (hs-con[5].p[20], dut.dut.p[180])
-  net (hs-con[3].p[22], dut.dut.p[182])
-  net (hs-con[4].p[22], dut.dut.p[183])
-  net (hs-con[5].p[22], dut.dut.p[185])
-  net (hs-con[3].p[24], dut.dut.p[187])
-  net (hs-con[4].p[24], dut.dut.p[188])
-  net (hs-con[5].p[24], dut.dut.p[189])
-  net (hs-con[3].p[26], dut.dut.p[190])
-  net (hs-con[4].p[26], dut.dut.p[191])
-  net (hs-con[9].p[0], dut.dut.p[194])
-  net (hs-con[8].p[0], dut.dut.p[197])
-  net (hs-con[9].p[2], dut.dut.p[198])
-  net (hs-con[8].p[2], dut.dut.p[199])
-  net (hs-con[9].p[4], dut.dut.p[200])
-  net (hs-con[8].p[4], dut.dut.p[201])
-  net (hs-con[9].p[6], dut.dut.p[202])
-  net (hs-con[8].p[6], dut.dut.p[203])
-  net (hs-con[9].p[8], dut.dut.p[206])
-  net (hs-con[8].p[8], dut.dut.p[207])
-  net (hs-con[9].p[10], dut.dut.p[208])
-  net (hs-con[8].p[10], dut.dut.p[209])
-  net (hs-con[9].p[12], dut.dut.p[210])
-  net (hs-con[8].p[12], dut.dut.p[211])
-  net (hs-con[9].p[14], dut.dut.p[214])
-  net (hs-con[8].p[14], dut.dut.p[215])
-  net (hs-con[9].p[16], dut.dut.p[216])
-  net (hs-con[8].p[16], dut.dut.p[221])
-  net (hs-con[9].p[18], dut.dut.p[222])
-  net (hs-con[8].p[18], dut.dut.p[223])
-  net (hs-con[9].p[20], dut.dut.p[224])
-  net (hs-con[8].p[20], dut.dut.p[225])
-  net (hs-con[9].p[22], dut.dut.p[226])
-  net (hs-con[8].p[22], dut.dut.p[227])
-  net (hs-con[9].p[24], dut.dut.p[228])
-  net (hs-con[8].p[24], dut.dut.p[231])
-  net (hs-con[9].p[26], dut.dut.p[233])
-  net (hs-con[8].p[26], dut.dut.p[234])
-  net (hs-con[9].p[28], dut.dut.p[236])
-  net (hs-con[8].p[28], dut.dut.p[237])
-  net (hs-con[9].p[30], dut.dut.p[238])
-  net (hs-con[8].p[30], dut.dut.p[239])
-  net (hs-con[9].p[0], dut.dut.p[240])
-  net (hs-con[6].p[30], dut.dut.p[243])
-  net (hs-con[7].p[30], dut.dut.p[246])
-  net (hs-con[6].p[28], dut.dut.p[247])
-  net (hs-con[7].p[28], dut.dut.p[248])
-  net (hs-con[6].p[26], dut.dut.p[249])
-  net (hs-con[7].p[26], dut.dut.p[250])
-  net (hs-con[6].p[24], dut.dut.p[251])
-  net (hs-con[7].p[24], dut.dut.p[252])
-  net (hs-con[6].p[22], dut.dut.p[255])
-  net (hs-con[7].p[22], dut.dut.p[258])
-  net (hs-con[6].p[20], dut.dut.p[259])
-  net (hs-con[7].p[20], dut.dut.p[260])
-  net (hs-con[6].p[18], dut.dut.p[261])
-  net (hs-con[7].p[18], dut.dut.p[262])
-  net (hs-con[6].p[16], dut.dut.p[263])
-  net (hs-con[7].p[16], dut.dut.p[264])
-  net (hs-con[6].p[14], dut.dut.p[265])
-  net (hs-con[7].p[14], dut.dut.p[270])
-  net (hs-con[6].p[12], dut.dut.p[272])
-  net (hs-con[7].p[12], dut.dut.p[273])
-  net (hs-con[6].p[10], dut.dut.p[274])
-  net (hs-con[7].p[10], dut.dut.p[275])
-  net (hs-con[6].p[8], dut.dut.p[276])
-  net (hs-con[7].p[8], dut.dut.p[277])
-  net (hs-con[6].p[6], dut.dut.p[278])
-  net (hs-con[7].p[6], dut.dut.p[280])
-  net (hs-con[6].p[4], dut.dut.p[283])
-  net (hs-con[7].p[4], dut.dut.p[286])
-  net (hs-con[6].p[2], dut.dut.p[287])
-  net (hs-con[7].p[2], dut.dut.p[288])
-  net (hs-con[6].p[0], dut.dut.p[289])
-  net (hs-con[7].p[0], dut.dut.p[290])
-  net (hs-con[6].p[30], dut.dut.p[291])
-  net (hs-con[7].p[30], dut.dut.p[292])
-  net (test-con[2].p[30], dut.dut.p[50])
-  net (test-con[3].p[30], dut.dut.p[51])
-  net (test-con[2].p[28], dut.dut.p[52])
-  net (test-con[3].p[28], dut.dut.p[53])
-  net (test-con[2].p[26], dut.dut.p[58])
-  net (test-con[3].p[26], dut.dut.p[59])
-  net (test-con[2].p[24], dut.dut.p[60])
-  net (test-con[3].p[24], dut.dut.p[61])
-  net (test-con[2].p[22], dut.dut.p[62])
-  net (test-con[3].p[22], dut.dut.p[63])
-  net (test-con[2].p[20], dut.dut.p[65])
-  net (test-con[3].p[20], dut.dut.p[66])
-  net (test-con[2].p[18], dut.dut.p[67])
-  net (test-con[3].p[18], dut.dut.p[68])
-  net (test-con[2].p[16], dut.dut.p[71])
-  net (test-con[3].p[16], dut.dut.p[72])
-  net (test-con[2].p[14], dut.dut.p[73])
-  net (test-con[3].p[14], dut.dut.p[74])
-  net (test-con[2].p[12], dut.dut.p[75])
-  net (test-con[3].p[12], dut.dut.p[76])
-  net (test-con[2].p[10], dut.dut.p[77])
-  net (test-con[3].p[10], dut.dut.p[78])
-  net (test-con[2].p[8], dut.dut.p[79])
-  net (test-con[3].p[8], dut.dut.p[80])
-  net (test-con[2].p[6], dut.dut.p[85])
-  net (test-con[3].p[6], dut.dut.p[86])
-  net (test-con[2].p[4], dut.dut.p[87])
-  net (test-con[3].p[4], dut.dut.p[88])
-  net (test-con[2].p[2], dut.dut.p[93])
-  net (test-con[3].p[2], dut.dut.p[94])
-  net (test-con[2].p[0], dut.dut.p[95])
-  net (test-con[3].p[0], dut.dut.p[96])
-  net (test-con[0].p[0], dut.dut.p[97])
-  net (test-con[1].p[0], dut.dut.p[98])
-  net (test-con[0].p[2], dut.dut.p[99])
-  net (test-con[1].p[2], dut.dut.p[100])
-  net (test-con[0].p[4], dut.dut.p[105])
-  net (test-con[1].p[4], dut.dut.p[106])
-  net (test-con[0].p[6], dut.dut.p[107])
-  net (test-con[1].p[6], dut.dut.p[108])
-  net (test-con[0].p[8], dut.dut.p[115])
-  net (test-con[1].p[8], dut.dut.p[116])
-  net (test-con[0].p[10], dut.dut.p[117])
-  net (test-con[1].p[10], dut.dut.p[118])
-  net (test-con[0].p[12], dut.dut.p[119])
-  net (test-con[1].p[12], dut.dut.p[120])
-  net (test-con[0].p[14], dut.dut.p[121])
-  net (test-con[1].p[14], dut.dut.p[122])
-  net (test-con[0].p[16], dut.dut.p[123])
-  net (test-con[1].p[16], dut.dut.p[124])
-  net (test-con[0].p[18], dut.dut.p[125])
-  net (test-con[1].p[18], dut.dut.p[126])
-  net (test-con[0].p[20], dut.dut.p[129])
-  net (test-con[1].p[20], dut.dut.p[130])
-  net (test-con[0].p[22], dut.dut.p[131])
-  net (test-con[1].p[22], dut.dut.p[132])
-  net (test-con[0].p[24], dut.dut.p[134])
-  net (test-con[1].p[24], dut.dut.p[135])
-  net (test-con[0].p[26], dut.dut.p[137])
-  net (test-con[1].p[26], dut.dut.p[138])
-  net (test-con[0].p[28], dut.dut.p[139])
-  net (test-con[1].p[28], dut.dut.p[140])
-  net (test-con[0].p[30], dut.dut.p[253])
-  net (test-con[1].p[30], dut.dut.p[254])
+  connect-hs-cons([[9 14 10 13]
+                 [5 2 6 1]
+                 [12 11 4 3]
+                 [0 7 8 15]])
 
   for j in 0 to tc-rows do :
     for i in 0 to 4 do :
@@ -673,14 +459,19 @@ pcb-module my-design :
     for h in 0 to 10 do :
       net (power-con.p[1], hs-con[h].p[j * 2 + 1])
 
-  inst fc : diff-clk-fanout(8)
+  inst fc : diff-clk-fanout(16)
+  place(fc.j) at loc(-32.0, 58.0, 90.0) on Top
+
   inst clk-in : diff-sma-wrapper(true)
+  place(clk-in.sma[0]) at loc(-48.0, 46.0, 90.0) on Top
+  place(clk-in.sma[1]) at loc(-48.0, 44.0, 90.0) on Top
   net CLK-FAST (clk-in.diff, fc.clkin)
   net (fc.vcc, pc-1v8.dst)
   net (clk-in.gnd, pc-1v8.dst.gnd)
 
-  for i in 0 to 8 do :
-    net (dut.fast-clk[i], fc.clkout[i])
+  for i in 0 to 16 do :
+    net (dut.dut.FAST_CLK_N[i], fc.clkout[i].N)
+    net (dut.dut.FAST_CLK_P[i], fc.clkout[i].P)
 
   place(hs-con[0]) at loc(0.0, -20.0, -90.0) on Top
   place(hs-con[1]) at loc(0.0, -28.0, -90.0) on Top
@@ -703,7 +494,7 @@ pcb-module my-design :
   schematic-group([pc-3v3 pc-1v8 pc-0v8 pc-0v9 power-con]) = power
   schematic-group([ferric ls]) = ind
   schematic-group([hs-con]) = hs-con
-  schematic-group([jt]) = jtag
+  ; schematic-group([jt]) = jtag
   schematic-group([t rs232]) = comm
   schematic-group([r-b]) = r-b
   schematic-group([test-con]) = test-con
