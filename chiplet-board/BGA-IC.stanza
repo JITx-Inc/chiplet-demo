@@ -24,8 +24,8 @@ pcb-module decouple-pair :
   inst c0 : gen-cap-cmp(0.01e-6)
   net (c.p[0], c0.p[0], v)
   net (c.p[1], c0.p[1], gnd)
-  place(c) at loc(0.6, 0.0) on Top
-  place(c0) at loc(0.6, -0.85) on Top
+  ; place(c) at loc(0.6, 0.0) on Top
+  ; place(c0) at loc(0.6, -0.85) on Top
 
 public pcb-component component :
 

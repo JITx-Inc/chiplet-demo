@@ -76,7 +76,7 @@ public pcb-module buffer-fanout (n:Int) :
   pin in
   port out : pin[n]
   port vin : power
-  inst b : SN74LVC1G125/component[n]
+  public inst b : SN74LVC1G125/component[n]
   inst c : gen-cap-cmp(0.1e-6)[n]
   
   for (i in 0 to n, n-idx in 0 to false) do :
@@ -131,7 +131,7 @@ pcb-module power-conditioning (voltage:Double, fuse:Double) :
 pcb-module reset-button :
   port pow-vio : power
   pin reset
-  inst b : OMRON-B3U-1000P/component
+  public inst b : OMRON-B3U-1000P/component
   ;pull down for now
   inst r : gen-res-cmp(10.0e3)[2]
   inst c : gen-cap-cmp(0.1e-6)
@@ -145,11 +145,11 @@ public pcb-module clock-fanout-jumper-select (n:Int) :
   public inst b : buffer-fanout(n)
   public inst j : pull-up-jumper(n + 2)
 
-  inst b-i : SN74LVC1G125/component[2]
-  inst ext-sys-clk : sma-wrapper
-  inst int-sys-clk : SiT8208/component
-  inst r : gen-res-cmp(1.0e3)
-  inst c : gen-cap-cmp(0.1e-6)[3]
+  public inst b-i : SN74LVC1G125/component[2]
+  public inst ext-sys-clk : sma-wrapper
+  public inst int-sys-clk : SiT8208/component
+  public inst r : gen-res-cmp(1.0e3)
+  public inst c : gen-cap-cmp(0.1e-6)[3]
 
   net (vin, b.vin, j.vin)
   net (vin.gnd, ext-sys-clk.gnd, int-sys-clk.GND, b-i[0].vs-, b-i[1].vs-, c[0].p[2], c[1].p[2], c[2].p[2])
@@ -179,7 +179,7 @@ public pcb-module diff-clk-fanout (n:Int) :
 
   val n-chips = (n + 2 - 1) / 2
 
-  inst b : SI53342/component[n-chips]
+  public inst b : SI53342/component[n-chips]
   inst c : gen-cap-cmp(1.0e-6)[n-chips]
   public inst j : samtec-tsm/component(n * 2)
   ;val g-count = to-seq(0 to false)  
@@ -206,7 +206,7 @@ pcb-module sma-wrapper :
   pin sig
   pin gnd
 
-  inst conn : ocdb/johnson/142-0701-801/component
+  public inst conn : ocdb/johnson/142-0701-801/component
   ; place(conn) at loc(0.0, 0.0) on Top
 
   net (sig, conn.sig)
@@ -226,7 +226,7 @@ public pcb-module diff-sma-wrapper (end-launch:True|False) :
    net (gnd, sma[1].gnd)
 
   else :
-   inst sma : molex-732511350/component[2]
+   public inst sma : molex-732511350/component[2]
   ;  place(sma[0]) at loc(0.0, 0.0) on Top
   ;  place(sma[1]) at loc(7.5, 0.0) on Top (relative-to sma[0])
    net (diff.N, sma[0].sig)
@@ -240,13 +240,13 @@ pcb-module arm-jtag-connector :
   port pow-vio : power
   port pow-vout : power
 
-  inst jtag-con : pin-header(10, 2)
+  public inst jtag-con : pin-header(10, 2)
   inst r-jp : gen-res-cmp(4.7e3)
   inst r-jtp : gen-res-cmp(10.0e3)[3]
   ; FIXME: This level shifter is not well matched to the problem and is overkill.
   ; It's a 4 channel with direction control.
   ; We need 5 channels, with fixed direction.
-  inst ls : SN74AVC4T774RGYR/component[2]
+  public inst ls : SN74AVC4T774RGYR/component[2]
 
   net (pow-vout.vdd, jtag-con.p[1], r-jtp[0].p[1], r-jtp[1].p[1], r-jp.p[1])
   net (pow-vio.gnd, jtag-con.p[3], jtag-con.p[5], jtag-con.p[9], r-jtp[2].p[1])
@@ -328,7 +328,7 @@ public defn power-decouple () :
 
 ;==== Module ===================================================================
 
-val board-shape = Rectangle(4.0 * 25.4, 5.0 * 25.4)
+val board-shape = Rectangle(4.0 * 25.4, 5.5 * 25.4)
 
 pcb-module my-design :
   val tc-rows = 18
@@ -337,12 +337,13 @@ pcb-module my-design :
   inst hs-con : samtec-tle/component(tc-rows)[10]
   inst test-con : samtec-tle/component(tc-rows)[4]
   inst sys-clk-select : clock-fanout-jumper-select(16)
-  place(sys-clk-select.j.berg) at loc(46.0, 41.0, 0.0) on Top
+  place(sys-clk-select.j.berg) at loc(46.0, 41.0, -90.0) on Top
+  place(sys-clk-select.ext-sys-clk.conn) at loc(48.0, 5.0, 90.0) on Top
   inst r-b : reset-button
 
   ; Power protection
   inst power-con : molex-mini-fit-jr/component(10)
-  place(power-con) at loc(45.0, -40.0, -90.0) on Top
+  place(power-con) at loc(45.0, -50.0, -90.0) on Top
   net GND (power-con.p[1], dut.dut.VSS, dut.dut.AVSS)
   for i in 1 to 5 do :
     net (power-con.p[5], power-con.p[i])
@@ -381,22 +382,9 @@ pcb-module my-design :
     net (pc-0v9.dst, decouple-caps[i].src)
     place(decouple-caps[i]) on Bottom
 
-  ; short-trace(decouple-caps[0].c0.p[2], dut.dut.p[143])
-  ; short-trace(decouple-caps[1].c0.p[2], dut.dut.p[256])
-  ; short-trace(decouple-caps[2].c0.p[2], dut.dut.p[217])
-  ; short-trace(decouple-caps[3].c0.p[2], dut.dut.p[266])
-  ; short-trace(decouple-caps[4].c0.p[2], dut.dut.p[294])
-  ; short-trace(decouple-caps[5].c0.p[2], dut.dut.p[300])
-  ; short-trace(decouple-caps[6].c0.p[2], dut.dut.p[306])
-  ; short-trace(decouple-caps[7].c0.p[2], dut.dut.p[312])
-  ; short-trace(decouple-caps[8].c0.p[2], dut.dut.p[297])
-  ; short-trace(decouple-caps[9].c0.p[2], dut.dut.p[303])
-  ; short-trace(decouple-caps[10].c0.p[2], dut.dut.p[309])
-  ; short-trace(decouple-caps[11].c0.p[2], dut.dut.p[315])
-
   ; Ferric connector
   inst ferric : ocdb/phoenix/combicon-mc/component(3)
-  ;inst r-fp : {gen-res-cmp(2.7e3)}[2]
+  place(ferric) at loc(20.0, -67.0, 90.0) on Top
   inst ls : level-shifter[2]
   
   net (ls[0].pwr-hv, ls[1].pwr-hv, pc-3v3.dst.vdd)
@@ -406,12 +394,6 @@ pcb-module my-design :
   net dut_pmb_dat (ls[1].sig-lv, dut.dut.PMB_DAT)
   net out_pmb_dat (ls[1].sig-hv, ferric.p[2])
   net (ferric.p[3], pc-1v8.dst.gnd)
-
-  ; ; JTAG connector w/ level shifter
-  ; inst jt : arm-jtag-connector
-  ; net (jt.jtag,     dut.jtag)
-  ; net (jt.pow-vio,  pc-1v8.dst)
-  ; net (jt.pow-vout, pc-3v3.dst)
 
   ;RS232 Interface
   inst t : TRS3122E/module
@@ -460,11 +442,13 @@ pcb-module my-design :
       net (power-con.p[1], hs-con[h].p[j * 2 + 1])
 
   inst fc : diff-clk-fanout(16)
-  place(fc.j) at loc(-32.0, 58.0, 90.0) on Top
+  place(fc.j) at loc(-30.0, 62.0, 0.0) on Top
+  for idx in 0 to 8 do :
+    place(fc.b[idx]) at loc(-35.0, 46.0 - 5.0 * to-double(idx), 0.0) on Top
 
   inst clk-in : diff-sma-wrapper(true)
-  place(clk-in.sma[0]) at loc(-48.0, 46.0, 90.0) on Top
-  place(clk-in.sma[1]) at loc(-48.0, 44.0, 90.0) on Top
+  place(clk-in.sma[0]) at loc(-46.0, 46.0, 90.0) on Top
+  place(clk-in.sma[1]) at loc(-46.0, 34.0, 90.0) on Top
   net CLK-FAST (clk-in.diff, fc.clkin)
   net (fc.vcc, pc-1v8.dst)
   net (clk-in.gnd, pc-1v8.dst.gnd)
@@ -570,4 +554,4 @@ defn export-bill-of-materials () :
 ; Run the code
 ; ============
 compile-design(my-design) ; ;make-chips-project()
-export-design()
+; export-design()

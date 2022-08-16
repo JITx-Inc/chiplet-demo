@@ -17,26 +17,6 @@ defpackage bga-dut :
   import ocdb/tolerance
   import utils/time
 
-; public pcb-module my-dut :
-;   port p0v8 : power
-;   port p0v9 : power
-;   port vddio : power
-;   port vin : power
-;   port jtag : jtag()
-;   port uart : uart()
-;   port pmb : chiplet-board/pmb
-;   port test-pad : pin[64]
-;   port bank : chiplet-board/chips-bank[16]
-;   port fast-clk : diff-pair[8]
-;   port gpio: pin[4]
-
-;   public inst dut : SIP-IC/component
-;   ; public inst dut : BGA-IC/component
-
-;   place(dut) at loc(0.0, 0.0) on Top
-
-
-
 public pcb-module my-dut :
   port p0v8 : power
   port p0v9 : power
@@ -47,7 +27,7 @@ public pcb-module my-dut :
   public inst dut : BGA-IC/component
   inst jtag-0-ohm : gen-res-cmp(1.0)[15]
   inst jtag-jumper : samtec-tsm/component(18)
-  place(jtag-jumper) at loc(0.0, -10.0) on Top
+  ; place(jtag-jumper) at loc(0.0, -10.0) on Top
   public net JTAG_TDI (jtag-jumper.p[1])
   public net JTAG_TDO (jtag-jumper.p[2])
   public net JTAG_TDO_j_00 (jtag-jumper.p[3])
