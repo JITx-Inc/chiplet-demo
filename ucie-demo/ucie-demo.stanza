@@ -74,7 +74,7 @@ pcb-module chiplet-system (num-modules:Int, pitch-y:Double) :
 
 pcb-module chiplet-design :
   
-  inst chiplet : chiplet-system(5, 1.20)
+  inst chiplet : chiplet-system(4, 1.25)
   place(chiplet) at loc(0.0, 0.0) on Top
 
 ; ==========================================
