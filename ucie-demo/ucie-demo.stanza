@@ -26,6 +26,10 @@ val board-shape = RoundedRectangle(15.0, 15.0, 0.25)
 val num-layers = 20
 public val bump-pitch = 9.0e-3
 
+pcb-module single-switch :
+  inst s : ucie-switch(bump-pitch)
+  place(s) at loc(0.0, 0.0, 0.0) on Top
+
 pcb-module simple-chiplet-system (num-modules:Int) :
   public inst x : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch) ; [num-modules]
   public inst y : ucie-retimer(bump-pitch)
@@ -41,7 +45,7 @@ pcb-module simple-chiplet-system (num-modules:Int) :
   connect-ucie-module(UCIe-Advanced, y.b, z.b)
   connect-ucie-module(UCIe-Advanced, z.a,   c)
   
-pcb-module chiplet-system (num-modules:Int, pitch-y:Double) :
+pcb-module ns-chiplet-system (num-modules:Int, pitch-y:Double) :
   if num-modules < 2 :
     fatal("Need at least 2 modules to build system.")
 
@@ -72,9 +76,44 @@ pcb-module chiplet-system (num-modules:Int, pitch-y:Double) :
         place(y[c-index]) at loc( 0.0, (pitch-y + property(y[c-index].a.height)) * to-double(c-index + 1), 180.0) on Top
         connect-ucie-module(UCIe-Advanced,   y[c-index - 1].b, y[c-index].b)
 
+pcb-module cardinal-chiplet-system (num-modules:Int, pitch-y:Double) :
+  pin vdd 
+  pin vddao 
+  pin gnd
+
+  if num-modules < 2 :
+    fatal("Need at least 2 modules to build system.")
+
+  defn is-even? (i:Int) :
+    i % 2 == 0
+
+  public inst x : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch)[2]
+  place(x[0]) at loc( 1.0 * property(x[0].width) / 2.0, 1.0 * property(x[0].height) / 2.0, 180.0) on Top
+  place(x[1]) at loc(-1.0 * property(x[1].width) / 2.0, pitch-y * to-double(num-modules), 0.0) on Top
+
+  net (vdd x[0].ucie.VCCIO x[1].ucie.VCCIO)
+  net (gnd x[0].ucie.VSS x[1].ucie.VSS)
+  net (vddao x[0].ucie.VCCAON x[1].ucie.VCCAON)
+
+  val num-switches = num-modules - 2
+  if num-switches == 0 :
+    connect-ucie-module(UCIe-Advanced,   x[0], x[1])
+  else :
+    public inst y : ucie-switch(bump-pitch)[num-switches]
+    connect-ucie-module(UCIe-Advanced,   x[0], y[0].s)
+    connect-ucie-module(UCIe-Advanced,   x[1], y[num-switches - 1].n)
+
+    for c-index in 0 to num-switches do:
+      net (vdd y[c-index].vdd)
+      net (gnd y[c-index].gnd)
+      net (vddao y[c-index].vddao)
+      place(y[c-index]) at loc( 0.0, (pitch-y + property(y[c-index].n.height)) * to-double(c-index + 1), 0.0) on Top
+      if c-index > 0 :
+        connect-ucie-module(UCIe-Advanced,   y[c-index - 1].n, y[c-index].s)
+
 pcb-module chiplet-design :
   
-  inst chiplet : chiplet-system(4, 1.25)
+  inst chiplet : cardinal-chiplet-system(4, 1.25)
   place(chiplet) at loc(0.0, 0.0) on Top
 
 ; ==========================================
@@ -125,5 +164,6 @@ defn check-design (circuit:Instantiable) :
 println $ get-time-string("%H:%M:%S")
 
 compile-design(chiplet-design)
+; compile-design(single-switch)
 
 println $ get-time-string("%H:%M:%S")
