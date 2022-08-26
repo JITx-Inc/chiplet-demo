@@ -1,23 +1,23 @@
 #use-added-syntax(jitx)
-defpackage ocdb/future-designs/FT232RL :
+defpackage ocdb/components/future-designs/FT232RL :
   import core
   import collections
   import math
   import jitx
   import jitx/commands
 
-  import ocdb/defaults
-  import ocdb/land-patterns
-  import ocdb/symbols
-  import ocdb/symbol-utils
-  import ocdb/generic-components
+  import ocdb/utils/defaults
+  import ocdb/utils/landpatterns
+  import ocdb/utils/symbols
+  import ocdb/utils/symbol-utils
+  import ocdb/utils/generic-components
 
-  import ocdb/bundles
-  import ocdb/box-symbol
-  import ocdb/property-structs
-  import ocdb/generator-utils
-  import ocdb/checks
-  import ocdb/tolerance
+  import ocdb/utils/bundles
+  import ocdb/utils/box-symbol
+  import ocdb/utils/property-structs
+  import ocdb/utils/generator-utils
+  import ocdb/utils/checks
+  import ocdb/utils/tolerance
 
 public pcb-component component:
   pin VCC
@@ -70,7 +70,7 @@ public pcb-component component:
   assign-landpattern(sop65-landpattern(28, 7.8))
   property(VCC.power-pin) = PowerPin(min-max(4.0, 5.25))
   property(VCCIO.power-pin) = PowerPin(min-max(1.8, 5.25))
-  property(p3V3OUT.power-supply-pin) = PowerSupplyPin(3.3, 0.05)
+  property(p3V3OUT.power-supply-pin) = PowerSupplyPin(typ(3.3), 0.05)
 
   eval-when has-property?(VCCIO.net-voltage) :
     val vdd  = max-value(property(VCCIO.net-voltage))
@@ -110,7 +110,7 @@ public pcb-module module :
   pin vccio
   pin gnd
   
-  public inst xcvr : ocdb/future-designs/FT232RL/component
+  public inst xcvr : ocdb/components/future-designs/FT232RL/component
   net (usb-2.vbus.vdd xcvr.VCC)
   net (xcvr.VCCIO vccio)
   net (usb-2.vbus.gnd xcvr.GND xcvr.AGND gnd)
