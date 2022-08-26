@@ -14,14 +14,14 @@ defpackage ucie-utils :
   import ocdb/utils/checks
   import ocdb/utils/box-symbol
   import ocdb/utils/symbols
-  ;import ocdb/manufacturers/rules
+  import ocdb/manufacturers/rules
   import ocdb/utils/property-structs
   import ocdb/utils/tolerance
 
 
 public pcb-landpattern label-silk (shape:Rectangle, text:String) : 
-  layer(Silkscreen("f-silk", Top)) = Text(text, 1.0, C, loc(0.0, 0.0))
-  layer(Silkscreen("f-silk", Top)) = LineRectangle(width(shape), height(shape), 0.0, 0.0, 5.0e-2)
+  layer(Silkscreen("f-silk", Top)) = Text(text, 0.05, C, loc(0.0, 0.0))
+  layer(Silkscreen("f-silk", Top)) = LineRectangle(width(shape), height(shape), 0.0, 0.0, 5.0e-3)
 
 public pcb-component label-comp (shape:Rectangle, text:String) : 
   val land = label-silk(shape, text)
@@ -344,9 +344,6 @@ public pcb-component ucie-module (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
 
   property(self.rated-temperature) = RatedTemperature(min-max(-40.0, 85.0))
 
-pcb-module one-module (pitch:Double):
-  inst x : ucie-utils/ucie-module(UCIe-Advanced, pitch)
-
 public pcb-module ucie-retimer (pitch:Double):
   public inst a : ucie-utils/ucie-module(UCIe-Advanced, pitch)
   public inst b : ucie-utils/ucie-module(UCIe-Advanced, pitch)
@@ -385,5 +382,8 @@ public pcb-module ucie-switch (pitch:Double):
   place(n) at loc( 1.0 * property(n.width) / 2.0,  0.1 +  1.0 * property(n.height), 180.0) on Top
   place(w) at loc(-0.1 + -1.0 * property(e.height),  1.0 * property(s.width) / 2.0, -90.0) on Top
   place(e) at loc( 0.1 +  1.0 * property(w.height), -1.0 * property(s.width) / 2.0,  90.0) on Top
+
+  inst outline : label-comp(Rectangle(1.0, 1.0), "UCIE-SWITCH")
+  place(outline) at loc(0.0, 0.0, 0.0) on Top
   schematic-group(self) = ucie-switch
   layout-group(self) = ucie-switch

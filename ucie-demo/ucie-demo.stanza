@@ -14,7 +14,7 @@ defpackage ucie-demo :
   import ocdb/utils/checks
   import ocdb/utils/box-symbol
   import ocdb/utils/symbols
-;   import ocdb/manufacturer/rules
+  import ocdb/manufacturers/rules
   import utils/time
 
   import ucie-rules
@@ -22,9 +22,24 @@ defpackage ucie-demo :
 
 ; enable-spy()
 
-val board-shape = RoundedRectangle(15.0, 15.0, 0.25)
 val num-layers = 20
 public val bump-pitch = 9.0e-3
+
+public val num-cols = 3
+public val num-rows = 3
+public val s-offset = 1.25
+public val board-shape = RoundedRectangle(to-double(num-cols) * s-offset, to-double(num-rows) * s-offset, 0.25)
+
+defn is-even? (i:Int) :
+  i % 2 == 0
+
+pcb-module one-module (pitch:Double):
+  inst x : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+  place(x) at loc(0.0, 0.0, 0.0) on Top
+
+pcb-module one-retimer :
+  inst x : ucie-retimer(bump-pitch)
+  place(x) at loc(0.0, 0.0, 0.0) on Top
 
 pcb-module single-switch :
   inst s : ucie-switch(bump-pitch)
@@ -48,9 +63,6 @@ pcb-module simple-chiplet-system (num-modules:Int) :
 pcb-module ns-chiplet-system (num-modules:Int, pitch-y:Double) :
   if num-modules < 2 :
     fatal("Need at least 2 modules to build system.")
-
-  defn is-even? (i:Int) :
-    i % 2 == 0
 
   public inst x : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch)[2]
   place(x[0]) at loc( 1.0 * property(x[0].width) / 2.0, 1.0 * property(x[0].height) / 2.0, 180.0) on Top
@@ -82,10 +94,7 @@ pcb-module cardinal-chiplet-system (num-modules:Int, pitch-y:Double) :
   pin gnd
 
   if num-modules < 2 :
-    fatal("Need at least 2 modules to build system.")
-
-  defn is-even? (i:Int) :
-    i % 2 == 0
+    fatal("Need at least 2 modules to build a system.")
 
   public inst x : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch)[2]
   place(x[0]) at loc( 1.0 * property(x[0].width) / 2.0, 1.0 * property(x[0].height) / 2.0, 180.0) on Top
@@ -96,6 +105,7 @@ pcb-module cardinal-chiplet-system (num-modules:Int, pitch-y:Double) :
   net (vddao x[0].ucie.VCCAON x[1].ucie.VCCAON)
 
   val num-switches = num-modules - 2
+
   if num-switches == 0 :
     connect-ucie-module(UCIe-Advanced,   x[0], x[1])
   else :
@@ -111,9 +121,38 @@ pcb-module cardinal-chiplet-system (num-modules:Int, pitch-y:Double) :
       if c-index > 0 :
         connect-ucie-module(UCIe-Advanced,   y[c-index - 1].n, y[c-index].s)
 
+
+pcb-module array-chiplet-system (num-rows:Int, num-cols:Int, pitch:Double) :
+  pin vdd 
+  pin vddao 
+  pin gnd
+
+  if num-rows < 2 :
+    fatal("Need at least 2 rows to build a system.")
+  if num-cols < 2 :
+    fatal("Need at least 2 columns to build a system.")
+
+  public inst s : ucie-switch(bump-pitch)[num-rows * num-cols]
+
+  for (c-loc in grid-locs(num-rows, num-cols, pitch, pitch), i in 0 to num-cols * num-rows) do:
+    place(s[i]) at c-loc on Top
+ 
+  for x in 0 to num-rows do:
+    for y in 0 to num-cols do:
+      val index = y + x * num-cols
+      if y < num-cols - 1:
+        connect-ucie-module(UCIe-Advanced, s[index].e, s[index + 1].w)
+      if x < num-rows - 1:
+        connect-ucie-module(UCIe-Advanced, s[index].s, s[index + num-cols].n)
+
 pcb-module chiplet-design :
-  
-  inst chiplet : cardinal-chiplet-system(4, 1.25)
+  inst chiplet : one-module(bump-pitch) 
+  ; inst chiplet : one-retimer
+  ; inst chiplet : single-switch
+  ; inst chiplet :  simple-chiplet-system(3)
+  ; inst chiplet : ns-chiplet-system(5, s-offset) 
+  ; inst chiplet : cardinal-chiplet-system(5, s-offset) 
+  ; inst chiplet : array-chiplet-system(num-rows, num-cols, s-offset)
   place(chiplet) at loc(0.0, 0.0) on Top
 
 ; ==========================================
@@ -133,9 +172,9 @@ defn run-design (circuit:Instantiable, run-checks?:True|False) :
   if run-checks? :
     run-checks("checks.txt")
   else:  
-    ; view-board()
-    ; view-schematic()
-    export-design()
+    view-board()
+    view-schematic()
+    ; export-design()
 
 ; code to add
 ; ====================
