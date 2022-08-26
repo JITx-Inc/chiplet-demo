@@ -1,4 +1,4 @@
-include "../open-components-database/stanza.proj"
+include "../ocdb/stanza.proj"
 
 package molex-mini-fit-jr defined-in "components/molex-mini-fit-jr.stanza"
 package samtec-tle defined-in "components/samtec-tle.stanza"

@@ -1,0 +1,358 @@
+#use-added-syntax(jitx)
+defpackage ucie-utils :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/utils/defaults
+  import ocdb/utils/generic-components
+  import ocdb/utils/bundles
+  import ocdb/utils/landpatterns
+  import ocdb/utils/design-vars
+  import ocdb/utils/generator-utils
+  import ocdb/utils/checks
+  import ocdb/utils/box-symbol
+  import ocdb/utils/symbols
+  ;import ocdb/manufacturers/rules
+  import ocdb/utils/property-structs
+  import ocdb/utils/tolerance
+
+
+public pcb-landpattern label-silk (shape:Rectangle, text:String) : 
+  layer(Silkscreen("f-silk", Top)) = Text(text, 1.0, C, loc(0.0, 0.0))
+  layer(Silkscreen("f-silk", Top)) = LineRectangle(width(shape), height(shape), 0.0, 0.0, 5.0e-2)
+
+public pcb-component label-comp (shape:Rectangle, text:String) : 
+  val land = label-silk(shape, text)
+  landpattern = land()
+  symbol = unplated-hole-sym()
+
+public pcb-enum ucie-utils/UCIE-PKGTYPE :
+  UCIe-Advanced   ; advanced package 64b with redundancy
+  UCIe-Standard   ; standard package 16b with no redundancy
+
+public pcb-struct ucie-utils/UCIe-module-parameters :
+  data-width : Int ; 16 or 64
+  tx-clk-freq : Double   ; Bit rate/wire = 2x tx-clk
+  rx-clk-freq : Double
+  receiver-terminated? : True|False
+
+public pcb-bundle UCIe-interface (type : ucie-utils/UCIE-PKGTYPE):
+  pin TXVLD                 ; 1 Transmit Data Valid; Enables clocking in corresponding module
+  pin TXTRK                 ; 1 Transmit track signal
+  pin TXCKP                 ; 1 Transmit Clock phase 1
+  pin TXCKN                 ; 1 Transmit Clock phase 2
+  pin RXVLD                 ; 1 Receive Data Valid; Enables clocking in corresponding module
+  pin RXTRK                 ; 1 Receive track.
+  pin RXCKP                 ; 1 Receive Clock phase 1
+  pin RXCKN                 ; 1 Receive Clock phase 2
+  pin TXDATASB              ; 1 Sideband Transmit Data
+  pin RXDATASB              ; 1 Sideband Receiver Data
+  pin TXCKSB                ; 1 Sideband Transmit Clock
+  pin RXCKSB                ; 1 Sideband Receive Clock
+  pin VSS                   ; Ground Reference
+  pin VCCIO                 ; IO supply
+  pin VCCAON                ; Always on Aux supply (sideband)
+  switch(type) :
+    UCIe-Advanced : 
+      port TXDATA : pin[64] ; 64 Transmit Data
+      port TXRD   : pin[4]  ; 4 Redundant for data Lane repair
+      port RXDATA : pin[64] ; 64 Receive Data
+      port RXRD   : pin[4]  ; 4 Redundant for data Lane repair
+      pin  TXCKRD           ; 1 Redundant for clock and track Lane repair
+      pin  RXCKRD           ; 1 Redundant for clock Lane repair
+      pin  TXDATASBRD       ; 1 Redundant Sideband Transmit Data
+      pin  RXDATASBRD       ; 1 Redundant Sideband Receiver Data
+      pin  TXCKSBRD         ; 1 Redundant Sideband Transmit Clock
+      pin  RXCKSBRD         ; 1 Redundant Sideband Receive Clock
+      pin  TXVLDRD          ; 1 Transmit Data Valid Redundant
+      pin  RXVLDRD          ; 1 Receive Data Valid; Redundant
+    UCIe-Standard : 
+      port TXDATA : pin[16] ; 16 Transmit Data
+      port RXDATA : pin[16] ; 16 Receive Data
+
+public defn connect-ucie-module (type : ucie-utils/UCIE-PKGTYPE, t:JITXObject, r:JITXObject):
+  inside pcb-module :
+    net (t.ucie.TXDATA   r.ucie.RXDATA  )
+    net (t.ucie.RXDATA   r.ucie.TXDATA  )
+    net (t.ucie.TXVLD    r.ucie.RXVLD   )
+    net (t.ucie.TXTRK    r.ucie.RXTRK   )
+    net (t.ucie.TXCKP    r.ucie.RXCKP   )
+    net (t.ucie.TXCKN    r.ucie.RXCKN   )
+    net (t.ucie.TXDATASB r.ucie.RXDATASB)
+    net (t.ucie.TXCKSB   r.ucie.RXCKSB  )
+    net (t.ucie.RXVLD    r.ucie.TXVLD   )
+    net (t.ucie.RXTRK    r.ucie.TXTRK   )
+    net (t.ucie.RXCKP    r.ucie.TXCKP   )
+    net (t.ucie.RXCKN    r.ucie.TXCKN   )
+    net (t.ucie.RXDATASB r.ucie.TXDATASB)
+    net (t.ucie.RXCKSB   r.ucie.TXCKSB  )
+    match(type) :
+      (UCIe-Advanced) :
+        net (t.ucie.TXRD        r.ucie.RXRD      )
+        net (t.ucie.RXRD        r.ucie.TXRD      )
+        net (t.ucie.TXCKRD      r.ucie.RXCKRD    )
+        net (t.ucie.TXDATASBRD  r.ucie.RXDATASBRD)
+        net (t.ucie.TXCKSBRD    r.ucie.RXCKSBRD  )
+        net (t.ucie.RXCKRD      r.ucie.TXCKRD    )
+        net (t.ucie.RXDATASBRD  r.ucie.TXDATASBRD)
+        net (t.ucie.RXCKSBRD    r.ucie.TXCKSBRD  )
+        net (t.ucie.TXVLDRD     r.ucie.RXVLDRD   )
+        net (t.ucie.RXVLDRD     r.ucie.TXVLDRD   )
+
+
+; Bump map for Advanced Package:
+; 44;  vss                     vss                   vccio                     vccio                       vss
+; 43;              vss                     vccio                 vccio                         vss                     vss
+; 42;  vss                     vss                   vccio                     vccio                       vss
+; 41;              rxcksbRD                rxcksb                vccio                         rxdatasb                rxdatasbRD
+; 40;  txdatasbRD              txdatasb              vccio                     txcksb                      txcksbRD
+; 39;              rxdata[50]              rxdata[35]            rxdata[29]                    rxdata[14]              rxdataRD[0]
+; 38;  rxdataRD[3]             rxdata[49]            rxdata[34]                rxdata[28]                  rxdata[13]
+; 37;              rxdata[51]              rxdata[36]            rxdata[30]                    rxdata[15]              vss
+; 36;  rxdata[63]              vccio                 rxdata[33]                vccio                       rxdata[12]
+; 35;              rxdata[52]              vss                   rxdata[31]                    vss                     rxdata[0]
+; 34;  vss                     rxdata[48]            rxdata[32]                rxdata[27]                  rxdata[11]
+; 33;              rxdata[53]              rxdata[37]            rxdataRD[1]                   rxdata[16]              rxdata[1]
+; 32;  rxdata[62]              rxdata[47]            rxdataRD[2]               rxdata[26]                  rxdata[10]
+; 31;              rxdata[54]              rxdata[38]            vss                           rxdata[17]              vss
+; 30;  rxdata[61]              rxdata[46]            vccio                     rxdata[25]                  rxdata[9]
+; 29;              rxdata[55]              rxdata[39]            rxckRD                        rxdata[18]              rxdata[2]
+; 28;  vss                     rxdata[45]            rxtrk                     rxdata[24]                  rxdata[8]
+; 27;              rxdata[56]              vss                   rxckn                         rxdata[19]              rxdata[3]
+; 26;  rxdata[60]              rxdata[44]            rxvld                     vss                         rxdata[7]
+; 25;              rxdata[57]              rxdata[40]            rxckp                         rxdata[20]              vss
+; 24;  rxdata[59]              rxdata[43]            rxvldRD                   rxdata[23]                  rxdata[6]
+; 23;              rxdata[58]              rxdata[41]            vss                           rxdata[21]              rxdata[4]
+; 22;  vss                     rxdata[42]            vccio                     rxdata[22]                  rxdata[5]
+; 21;              vccfwdio                vccfwdio              vccfwdio                      vccfwdio                vccfwdio
+; 20;  vccio                   txdata[21]            vccio                     txdata[41]                  txdata[58]
+; 19;              txdata[5]               txdata[22]            vss                           txdata[42]              vss
+; 18;  txdata[4]               txdata[20]            txckp                     txdata[40]                  txdata[57]
+; 17;              txdata[6]               txdata[23]            txtrk                         txdata[43]              txdata[59]
+; 16;  vss                     txdata[19]            txckn                     vss                         txdata[56]
+; 15;              txdata[7]               vss                   txvld                         txdata[44]              txdata[60]
+; 14;  txdata[3]               txdata[18]            txckRD                    txdata[39]                  txdata[55]
+; 13;              txdata[8]               txdata[24]            txvldRD                       txdata[45]              vss
+; 12;  txdata[2]               txdata[17]            vccio                     txdata[38]                  txdata[54]
+; 11;              txdata[9]               txdata[25]            vss                           txdata[46]              txdata[61]
+; 10;  vccio                   vccio                 vccio                     vccio                       vccio
+; 09;              txdata[10]              txdata[26]            txdataRD[2]                   txdata[47]              txdata[62]
+; 08;  txdata[1]               txdata[16]            txdataRD[1]               txdata[37]                  txdata[53]
+; 07;              txdata[11]              txdata[27]            txdata[32]                    txdata[48]              vss
+; 06;  txdata[0]               vss                   txdata[31]                vss                         txdata[52]
+; 05;              txdata[12]              vss                   txdata[33]                    vss                     txdata[63]
+; 04;  vss                     txdata[15]            txdata[30]                txdata[36]                  txdata[51]
+; 03;              txdata[13]              txdata[28]            txdata[34]                    txdata[49]              txdataRD[3]
+; 02;  txdataRD[0]             txdata[14]            txdata[29]                txdata[35]                  txdata[50]
+; 01;              vccio                   vccio                 vccio                         vccio                   vccio
+; 00;  vccio                   vccio                 vccio                     vccio                       vccio
+; ===========================================================Die Edge==========================================================
+;        00           01         02          03         04          05           06              07          08           09
+
+; [[signal-num, [column, row]], ...]
+
+val txdatasbRD-sites = [[ 0,[ 0,40]]]
+val rxdatasbRD-sites = [[ 0,[ 9,41]]]
+val rxcksbRD-sites =   [[ 0,[ 1,41]]]
+val txdatasb-sites =   [[ 0,[ 2,40]]]
+val rxcksb-sites =     [[ 0,[ 3,41]]]
+val rxtrk-sites =      [[ 0,[ 4,28]]]
+val rxvld-sites =      [[ 0,[ 4,26]]]
+val rxvldRD-sites =    [[ 0,[ 4,24]]]
+val txckp-sites =      [[ 0,[ 4,18]]]
+val txckn-sites =      [[ 0,[ 4,16]]]
+val txckRD-sites =     [[ 0,[ 4,14]]]
+val txvldRD-sites =    [[ 0,[ 5,13]]]
+val txvld-sites =      [[ 0,[ 5,15]]]
+val txtrk-sites =      [[ 0,[ 5,17]]]
+val rxckp-sites =      [[ 0,[ 5,25]]]
+val rxckn-sites =      [[ 0,[ 5,27]]]
+val rxckRD-sites =     [[ 0,[ 5,29]]]
+val txcksb-sites =     [[ 0,[ 6,40]]]
+val rxdatasb-sites =   [[ 0,[ 7,41]]]
+val txcksbRD-sites =   [[ 0,[ 8,40]]]
+
+val rxdataRD-sites = [
+                        [ 0,[ 9,39]],
+                        [ 1,[ 5,33]],
+                        [ 2,[ 4,32]],
+                        [ 3,[ 0,38]]
+                      ]
+
+val txdataRD-sites = [
+                        [ 0,[ 0, 2]],
+                        [ 1,[ 4, 8]],
+                        [ 2,[ 5, 9]],
+                        [ 3,[ 9, 3]]
+                      ]
+
+val vss-sites = [
+                  [ 0,[ 0,44]], [ 1,[ 0,42]], [ 2,[ 0,34]], [ 3,[ 0,28]], [ 4,[ 0,22]], [ 5,[ 0,16]], [ 6,[ 0, 4]],
+                  [ 7,[ 1,43]],
+                  [ 8,[ 2,44]], [ 9,[ 2,42]], [10,[ 2, 6]],
+                  [11,[ 3, 5]], [12,[ 3,15]], [13,[ 3,27]], [14,[ 3,35]],
+                  [16,[ 5,11]], [17,[ 5,19]], [18,[ 5,23]], [19,[ 5,31]],
+                  [20,[ 6, 6]], [21,[ 6,16]], [22,[ 6,26]],
+                  [23,[ 7, 5]], [24,[ 7,35]], [25,[ 7,43]],
+                  [26,[ 8,42]], [27,[ 8,44]],
+                  [28,[ 9, 7]], [29,[ 9,13]], [30,[ 9,19]], [31,[ 9,25]], [32,[ 9,31]], [33,[ 9,37]], [34,[ 9,43]]
+                ]
+
+val vccio-sites = [
+                  [ 0,[ 0, 0]], [ 1,[ 0,10]], [ 2,[ 0,20]]
+                  [ 3,[ 1, 1]],
+                  [ 4,[ 2, 0]], [ 5,[ 2,10]], [ 6,[ 2,36]],
+                  [ 7,[ 3, 1]], [ 8,[ 3,43]],
+                  [ 9,[ 4, 0]], [10,[ 4,10]], [11,[ 4,12]], [12,[ 4,20]], [13,[ 4,22]], [14,[ 4,30]], [15,[ 4,40]], [16,[ 4,42]], [17,[ 4,44]], 
+                  [18,[ 5, 1]], [19,[ 5,41]], [20,[ 5,43]],
+                  [21,[ 6, 0]], [22,[ 6,10]], [23,[ 6,36]], [24,[ 6,42]], [25,[ 6,44]],
+                  [26,[ 7, 1]],
+                  [27,[ 8, 0]], [28,[ 8,10]],
+                  [29,[ 9, 1]]
+                  ]
+val vccfwdio-sites = [
+                      [ 0,[ 1,21]],
+                      [ 1,[ 3,21]],
+                      [ 2,[ 5,21]],
+                      [ 3,[ 7,21]],
+                      [ 4,[ 9,21]],
+                      
+                    ]
+; [[data-bit-no, [column, row]], ...]
+val tx-data-sites = [
+                    [ 0,[ 0, 6]], [ 1,[ 0, 8]], [ 2,[ 0,12]], [ 3,[ 0,14]], [ 4,[ 0,18]], 
+                    [ 5,[ 1,19]], [ 6,[ 1,17]], [ 7,[ 1,15]], [ 8,[ 1,13]], [ 9,[ 1,11]], [10,[ 1, 9]], [11,[ 1, 7]], [12,[ 1, 5]], [13,[ 1, 3]],
+                    [14,[ 2, 2]], [15,[ 2, 4]], [16,[ 2, 8]], [17,[ 2,12]], [18,[ 2,14]], [19,[ 2,16]], [20,[ 2,18]], [21,[ 2,20]],
+                    [22,[ 3,19]], [23,[ 3,17]], [24,[ 3,13]], [25,[ 3,11]], [26,[ 3, 9]], [27,[ 3, 7]], [28,[ 3, 3]],
+                    [29,[ 4, 2]], [30,[ 4, 4]], [31,[ 4, 6]],
+                    [32,[ 5, 7]], [33,[ 5, 5]], [34,[ 5, 3]],
+                    [35,[ 6, 2]], [36,[ 6, 4]], [37,[ 6, 8]], [38,[ 6,12]], [39,[ 6,14]], [40,[ 6,18]], [41,[ 6,20]],
+                    [42,[ 7,19]], [43,[ 7,17]], [44,[ 7,15]], [45,[ 7,13]], [46,[ 7,11]], [47,[ 7, 9]], [48,[ 7, 7]], [49,[ 7, 3]],
+                    [50,[ 8, 2]], [51,[ 8, 4]], [52,[ 8, 6]], [53,[ 8, 8]], [54,[ 8,12]], [55,[ 8,14]], [56,[ 8,16]], [57,[ 8,18]], [58,[ 8,20]],
+                    [59,[ 9,17]], [60,[ 9,15]], [61,[ 9,11]], [62,[ 9, 9]], [63,[ 9, 5]]
+                    ]
+
+val rx-data-sites = [
+                    [ 0,[ 9,35]], [ 1,[ 9,33]], [ 2,[ 9,29]], [ 3,[ 9,27]], [ 4,[ 9,23]], 
+                    [ 5,[ 8,22]], [ 6,[ 8,24]], [ 7,[ 8,26]], [ 8,[ 8,28]], [ 9,[ 8,30]], [10,[ 8,32]], [11,[ 8,34]], [12,[ 8,36]], [13,[ 8,38]],
+                    [14,[ 7,39]], [15,[ 7,37]], [16,[ 7,33]], [17,[ 7,31]], [18,[ 7,29]], [19,[ 7,27]], [20,[ 7,25]], [21,[ 7,23]],
+                    [22,[ 6,22]], [23,[ 6,24]], [24,[ 6,28]], [25,[ 6,30]], [26,[ 6,32]], [27,[ 6,34]], [28,[ 6,38]],
+                    [29,[ 5,39]], [30,[ 5,37]], [31,[ 5,35]],
+                    [32,[ 4,34]], [33,[ 4,36]], [34,[ 4,38]],
+                    [35,[ 3,39]], [36,[ 3,37]], [37,[ 3,33]], [38,[ 3,31]], [39,[ 3,29]], [40,[ 3,25]], [41,[ 3,23]],
+                    [42,[ 2,22]], [43,[ 2,24]], [44,[ 2,26]], [45,[ 2,28]], [46,[ 2,30]], [47,[ 2,32]], [48,[ 2,34]], [49,[ 2,38]],
+                    [50,[ 1,39]], [51,[ 1,37]], [52,[ 1,35]], [53,[ 1,33]], [54,[ 1,31]], [55,[ 1,29]], [56,[ 1,27]], [57,[ 1,25]], [58,[ 1,23]],
+                    [59,[ 0,24]], [60,[ 0,26]], [61,[ 0,30]], [62,[ 0,32]], [63,[ 0,36]]
+                    ]
+
+defn calc-loc (pad-stem:String, sites, pitch:Double) :
+  inside pcb-landpattern:
+    for [n [x y]] in sites do:
+      val ploc = loc(to-double(x) * pitch, to-double(y) * pitch)
+      val name = 
+        if length(sites) > 1 :
+          Ref(pad-stem)[n]
+        else:
+          Ref(pad-stem)
+      pad (name) : bga-pad(pitch / 4.0) at ploc
+
+public pcb-landpattern ucie-bumps (type: ucie-utils/UCIE-PKGTYPE, pitch:Double) :
+
+  ; val grid-1 = grid-locs(5, 24, pitch-x, pitch-y)
+  ; val grid-2 = grid-locs(4, 22, pitch-x, pitch-y)
+  calc-loc("txdata", tx-data-sites, pitch)
+  calc-loc("rxdata", rx-data-sites, pitch)
+  calc-loc("rxdataRD", rxdataRD-sites, pitch)
+  calc-loc("txdataRD", txdataRD-sites, pitch)
+  calc-loc("vss", vss-sites, pitch)
+  calc-loc("vccio", vccio-sites, pitch)
+  calc-loc("vccfwdio", vccfwdio-sites, pitch)
+
+  calc-loc("txdatasbRD", txdatasbRD-sites, pitch)
+  calc-loc("rxdatasbRD", rxdatasbRD-sites, pitch)
+  calc-loc("rxcksbRD", rxcksbRD-sites, pitch)
+  calc-loc("txdatasb", txdatasb-sites, pitch)
+  calc-loc("rxcksb", rxcksb-sites, pitch)
+  calc-loc("rxtrk", rxtrk-sites, pitch)
+  calc-loc("rxvld", rxvld-sites, pitch)
+  calc-loc("rxvldRD", rxvldRD-sites, pitch)
+  calc-loc("txckp", txckp-sites, pitch)
+  calc-loc("txckn", txckn-sites, pitch)
+  calc-loc("txckRD", txckRD-sites, pitch)
+  calc-loc("txvldRD", txvldRD-sites, pitch)
+  calc-loc("txvld", txvld-sites  , pitch)
+  calc-loc("txtrk", txtrk-sites, pitch)
+  calc-loc("rxckp", rxckp-sites, pitch)
+  calc-loc("rxckn", rxckn-sites, pitch)
+  calc-loc("rxckRD", rxckRD-sites, pitch)
+  calc-loc("txcksb", txcksb-sites, pitch)
+  calc-loc("rxdatasb", rxdatasb-sites, pitch)
+  calc-loc("txcksbRD", txcksbRD-sites, pitch)
+  layer(Courtyard(Top)) = Rectangle(11.0 * pitch, 46.0 * pitch, loc(4.5 * pitch, 22.5 * pitch))
+
+public pcb-component ucie-module (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
+  port ucie : UCIe-interface(type)
+
+  pin-properties :
+    [pin:Ref          | pads:Ref ... | side:Dir  ]
+    for i in 0 to 64 do :
+      [ucie.TXDATA[i] | txdata[i]    |    Right  ]
+      [ucie.RXDATA[i] | rxdata[i]    |    Left   ]
+    for i in 0 to 4 do :
+      [ ucie.TXRD[i]  | txdataRD[i]  |    Right  ]  ; 4 Redundant for data Lane repair
+      [ ucie.RXRD[i]  | rxdataRD[i]  |    Left   ]  ; 4 Redundant for data Lane repair
+    [ ucie.TXCKRD     | txckRD       |    Right  ]  ; 1 Redundant for clock and track Lane repair
+    [ ucie.RXCKRD     | rxckRD       |    Left   ]  ; 1 Redundant for clock Lane repair
+    [ ucie.TXDATASBRD | txdatasbRD   |    Right  ]  ; 1 Redundant Sideband Transmit Data
+    [ ucie.RXDATASBRD | rxdatasbRD   |    Left   ]  ; 1 Redundant Sideband Receiver Data
+    [ ucie.TXCKSBRD   | txcksbRD     |    Right  ]  ; 1 Redundant Sideband Transmit Clock
+    [ ucie.RXCKSBRD   | rxcksbRD     |    Left   ]  ; 1 Redundant Sideband Receive Clock
+    [ ucie.TXVLDRD    | txvldRD      |    Right  ]  ; 1 Transmit Data Valid Redundant
+    [ ucie.RXVLDRD    | rxvldRD      |    Left   ]  ; 1 Receive Data Valid; Redundant
+    [ ucie.TXVLD      | txvld        |    Right  ]       ; 1 Transmit Data Valid; Enables clocking in corresponding module
+    [ ucie.TXTRK      | txtrk        |    Right  ]       ; 1 Transmit track signal
+    [ ucie.TXCKP      | txckp        |    Right  ]       ; 1 Transmit Clock phase 1
+    [ ucie.TXCKN      | txckn        |    Right  ]       ; 1 Transmit Clock phase 2
+    [ ucie.RXVLD      | rxvld        |    Left   ]       ; 1 Receive Data Valid; Enables clocking in corresponding module
+    [ ucie.RXTRK      | rxtrk        |    Left   ]       ; 1 Receive track.
+    [ ucie.RXCKP      | rxckp        |    Left   ]       ; 1 Receive Clock phase 1
+    [ ucie.RXCKN      | rxckn        |    Left   ]       ; 1 Receive Clock phase 2
+    [ ucie.TXDATASB   | txdatasb     |    Right  ]       ; 1 Sideband Transmit Data
+    [ ucie.RXDATASB   | rxdatasb     |    Left   ]       ; 1 Sideband Receiver Data
+    [ ucie.TXCKSB     | txcksb       |    Right  ]       ; 1 Sideband Transmit Clock
+    [ ucie.RXCKSB     | rxcksb       |    Left   ]       ; 1 Sideband Receive Clock
+    val vss-pins = to-tuple $ 
+      for i in 0 to length(vss-sites) seq :
+        Ref("vss")[i]
+    val vccio-pins = to-tuple $ 
+      for i in 0 to length(vccio-sites) seq :
+        Ref("vccio")[i]
+    val vccfwdio-pins = to-tuple $ 
+      for i in 0 to length(vccfwdio-sites) seq :
+        Ref("vccfwdio")[i]
+    [ ucie.VSS        | vss[0]     |    Down   ]
+    [ ucie.VCCIO      | vccio[0]   |    Up     ]
+    [ ucie.VCCAON     | vccfwdio[0]|    Up     ]
+
+  assign-landpattern(ucie-bumps(UCIe-Advanced, pitch))
+  make-box-symbol()
+
+  property(self.width) = 9.0 * pitch
+  property(self.height) = 44.0 * pitch
+
+  property(self.rated-temperature) = RatedTemperature(min-max(-40.0, 85.0))
+
+pcb-module one-module (pitch:Double):
+  inst x : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+
+public pcb-module ucie-retimer (pitch:Double):
+  public inst a : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+  public inst b : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+
+  place(a) at loc(-1.0 * property(a.width) / 2.0, -1.0 * property(a.height) / 2.0, 0.0) on Top
+  place(b) at loc( 1.0 * property(a.width) / 2.0, 0.5 + 1.0 * property(a.height) / 2.0, 180.0) on Top
+  schematic-group(self) = ucie-retimer
+  layout-group(self) = ucie-retimer
+

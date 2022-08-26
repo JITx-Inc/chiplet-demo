@@ -1,0 +1,136 @@
+#use-added-syntax(jitx)
+defpackage ucie-demo :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/utils/defaults
+  import ocdb/utils/generic-components
+  import ocdb/utils/bundles
+  import ocdb/utils/landpatterns
+  import ocdb/utils/design-vars
+  import ocdb/utils/generator-utils
+  import ocdb/utils/checks
+  import ocdb/utils/box-symbol
+  import ocdb/utils/symbols
+;   import ocdb/manufacturer/rules
+  import utils/time
+
+  import ucie-rules
+  import ucie-utils
+
+; enable-spy()
+
+val board-shape = RoundedRectangle(15.0, 15.0, 0.25)
+val num-layers = 20
+public val bump-pitch = 9.0e-3
+
+pcb-module simple-chiplet-system (num-modules:Int) :
+  public inst x : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch) ; [num-modules]
+  public inst y : ucie-retimer(bump-pitch)
+  public inst z : ucie-retimer(bump-pitch)
+  public inst c : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch) ; [num-modules]
+
+  place(x) at loc(1.0 * property(x.width) / 2.0, 1.0 * property(x.height) / 2.0, 180.0) on Top
+  ; place(y) at loc(-1.0 * property(y.a.width) / 2.0, 1.0 + -1.0 * property(y.a.height) / 2.0,   0.0) on Top
+  place(y) at loc(0.0, 0.5,   0.0) on Top
+  place(z) at loc(0.0, 2.0, 180.0) on Top
+  place(c) at loc(-1.0 * property(c.width) / 2.0, 2.5, 0.0) on Top
+  connect-ucie-module(UCIe-Advanced,   x, y.a)
+  connect-ucie-module(UCIe-Advanced, y.b, z.b)
+  connect-ucie-module(UCIe-Advanced, z.a,   c)
+  
+pcb-module chiplet-system (num-modules:Int, pitch-y:Double) :
+  if num-modules < 2 :
+    fatal("Need at least 2 modules to build system.")
+
+  defn is-even? (i:Int) :
+    i % 2 == 0
+
+  public inst x : ucie-utils/ucie-module(UCIe-Advanced, bump-pitch)[2]
+  place(x[0]) at loc( 1.0 * property(x[0].width) / 2.0, 1.0 * property(x[0].height) / 2.0, 180.0) on Top
+  place(x[1]) at loc(-1.0 * property(x[1].width) / 2.0, (pitch-y + property(x[1].height)) * to-double(num-modules), 0.0) on Top
+
+  val num-retimers = num-modules - 2
+  if num-retimers == 0 :
+    connect-ucie-module(UCIe-Advanced,   x[0], x[1])
+  if num-retimers > 0 :
+    public inst y : ucie-retimer(bump-pitch)[num-retimers]
+    connect-ucie-module(UCIe-Advanced,   x[0], y[0].a)
+    if (num-retimers % 2 == 0) :
+      connect-ucie-module(UCIe-Advanced,   x[1], y[num-retimers - 1].a)
+    else :
+      connect-ucie-module(UCIe-Advanced,   x[1], y[num-retimers - 1].b)
+
+    for c-index in 0 to num-retimers do:
+      if is-even?(c-index) :
+        place(y[c-index]) at loc( 0.0, (pitch-y + property(y[c-index].a.height)) * to-double(c-index + 1), 0.0) on Top
+         if c-index > 0 :
+          connect-ucie-module(UCIe-Advanced,   y[c-index - 1].a, y[c-index].a)
+      else :
+        place(y[c-index]) at loc( 0.0, (pitch-y + property(y[c-index].a.height)) * to-double(c-index + 1), 180.0) on Top
+        connect-ucie-module(UCIe-Advanced,   y[c-index - 1].b, y[c-index].b)
+
+
+
+
+
+
+
+
+pcb-module chiplet-design :
+  
+  inst chiplet : chiplet-system(7, 1.00)
+  place(chiplet) at loc(0.0, 0.0) on Top
+
+; ==========================================
+; Configure the design, then run or check it
+; ==========================================
+defn run-design (circuit:Instantiable, run-checks?:True|False) :
+  set-design-directory("ucie-output")
+  set-board(ocdb/defaults/default-board(num-layers, board-shape))
+  set-rules(intel-build-up)
+
+  var main-module = circuit
+  if run-checks? :
+    main-module = ocdb/utils/generator-utils/run-final-passes(circuit) ; Analyze design with a pass
+  
+  set-main-module(main-module) ; Treat the provided module as a design, and compile it.
+  
+  if run-checks? :
+    run-checks("checks.txt")
+  else:  
+    ; view-board()
+    ; view-schematic()
+    export-design()
+
+; code to add
+; ====================
+; Export design to CAD
+; ====================
+defn export-design () :
+  set-paper(ANSI-A4)
+  set-export-backend(`kicad)
+  export-cad()
+
+; ====================================
+; Compile the design, view the results
+; ====================================
+defn compile-design (circuit:Instantiable) :
+  run-design(circuit, false)
+
+; =====================
+; Run the design checks
+; =====================
+defn check-design (circuit:Instantiable) :
+  run-design(circuit, true)
+
+; ============
+; Run the code
+; ============
+println $ get-time-string("%H:%M:%S")
+
+compile-design(chiplet-design)
+
+println $ get-time-string("%H:%M:%S")
