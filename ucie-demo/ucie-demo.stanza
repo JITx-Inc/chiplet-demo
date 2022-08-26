@@ -72,16 +72,9 @@ pcb-module chiplet-system (num-modules:Int, pitch-y:Double) :
         place(y[c-index]) at loc( 0.0, (pitch-y + property(y[c-index].a.height)) * to-double(c-index + 1), 180.0) on Top
         connect-ucie-module(UCIe-Advanced,   y[c-index - 1].b, y[c-index].b)
 
-
-
-
-
-
-
-
 pcb-module chiplet-design :
   
-  inst chiplet : chiplet-system(7, 1.00)
+  inst chiplet : chiplet-system(5, 1.20)
   place(chiplet) at loc(0.0, 0.0) on Top
 
 ; ==========================================
@@ -89,7 +82,7 @@ pcb-module chiplet-design :
 ; ==========================================
 defn run-design (circuit:Instantiable, run-checks?:True|False) :
   set-design-directory("ucie-output")
-  set-board(ocdb/defaults/default-board(num-layers, board-shape))
+  set-board(ocdb/utils/defaults/default-board(num-layers, board-shape))
   set-rules(intel-build-up)
 
   var main-module = circuit
