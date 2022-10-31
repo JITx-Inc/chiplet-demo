@@ -10,18 +10,21 @@ defpackage chiplet-system :
   import ocdb/utils/bundles
 
   import ucie-utils
+  import bow-utils
 ; ==========================================
 ; Implement other modules used by our design 
 ; ==========================================
 pcb-bundle system-io :
-  jtag : jtag()
-  ddr4 : diff-pair
+  port jtag : jtag()
+  port ddr4 : diff-pair
 
-pcb-component compute-chiplet :
-  port ucie : UCIE ; Has some area, SI specs
-  port jtag : jtag
+pcb-module compute-chiplet :
+  port system-io : system-io
+  port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst 
+  inst bamps : ucie-module(UCIe-Advanced, 9.0e-1)
+  place(bamps) at loc(0.0, 0.0) on Top
+  net (bamps.ucie ucie)
 
 
   property(self.thickness) = 0.5
@@ -29,57 +32,50 @@ pcb-component compute-chiplet :
   property(self.PDK) = "Intel-18A"
   property(self.RTL) = "compute.vl" ; some model - composed of smaller models
 
-pcb-module graphics-chiplet () :
-  manufacturer          = "Intel"
+; pcb-module graphics-chiplet () :
+;   manufacturer          = "Intel"
 
-pcb-component hub-chiplet () :
-  manufacturer          = "Intel"
+; pcb-component hub-chiplet () :
+;   manufacturer          = "Intel"
 
-
-pcb-component interposer () :
-  manufacturer          = "Intel"
-
-pcb-bundle UCIE :
- ...
- ...
 
 pcb-module interposer :
   inst compute : compute-chiplet
-  inst graphics : graphics-chiplet
+  inst graphics : compute-chiplet
 
   net (compute.ucie graphics.ucie)
 
 
 
-pcb-module chiplet-system (Package:True|False):
+; pcb-module chiplet-system (Package:True|False):
 
-  port package-jtag : jtag
-  port memory : DDR4
+;   port package-jtag : jtag
+;   port memory : DDR4
 
-  ; z-stacking
-  inst base : interposer
-  inst hub : hub-chiplet
-  inst compute : compute-chiplet
-  inst graphics : graphics-chiplet
+;   ; z-stacking
+;   inst base : interposer
+;   inst hub : hub-chiplet
+;   inst compute : compute-chiplet
+;   inst graphics : graphics-chiplet
 
-  ; place(base) and everything else.
+;   ; place(base) and everything else.
 
-  ; width is known - could vary in number
-  net-through(base, compute.ucie graphics.ucie); Has pre-defined bump map
-  net-through(base, compute.jtag package-jtag) ; Has pre-defined bump map
-  net-through(base, hub.ddr4 memory) ; JEDEC - has bump map for DDR4
+;   ; width is known - could vary in number
+;   net-through(base, compute.ucie graphics.ucie); Has pre-defined bump map
+;   net-through(base, compute.jtag package-jtag) ; Has pre-defined bump map
+;   net-through(base, hub.ddr4 memory) ; JEDEC - has bump map for DDR4
 
-  if Package:
-    inst balls : bga-pattern
-    net (package-jtag balls.jtag)
+;   if Package:
+;     inst balls : bga-pattern
+;     net (package-jtag balls.jtag)
 
-make-design(chiplet-system(False))
+; make-design(chiplet-system(False))
 
-pcb-module board :
-  inst package : chiplet-system(True)
-  inst memory : dimms
+; pcb-module board :
+;   inst package : chiplet-system(True)
+;   inst memory : dimms
 
-  net (package.DDR4 memory.DDR4)
+;   net (package.DDR4 memory.DDR4)
   ;  Other board components. Power, etc...
 
 ; When you run this:
@@ -159,4 +155,4 @@ defn export-bill-of-materials () :
 ; ============
 ; Run the code
 ; ============
-compile-design(my-design)
+compile-design(interposer)

@@ -1,0 +1,247 @@
+#use-added-syntax(jitx)
+defpackage bow-utils :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/generic-components
+  import ocdb/bundles
+  import ocdb/land-patterns
+  import ocdb/design-vars
+  import ocdb/generator-utils
+  import ocdb/checks
+  import ocdb/box-symbol
+  import ocdb/symbols
+  import ocdb/rules
+
+public pcb-landpattern label-silk (shape:Rectangle, text:String) : 
+  layer(Silkscreen("f-silk", Top)) = Text(text, 1.0, C, loc(0.0, 0.0))
+  layer(Silkscreen("f-silk", Top)) = LineRectangle(width(shape), height(shape), 0.0, 0.0, 5.0e-2)
+
+public pcb-component label-comp (shape:Rectangle, text:String) : 
+  val land = label-silk(shape, text)
+  landpattern = land()
+  symbol = unplated-hole-sym()
+
+public var substrate-routing-layers = 4
+public var substrate-pitch = 60.0e-3
+
+public pcb-struct chiplet-utils/BoW-link :
+  width : Int
+  tx-clk : Double
+  max-edge-width : Double
+  ; Bit rate/wire = 2x tx-clk
+  source-terminated? : True|False
+
+public pcb-struct chiplet-utils/link-parameters :
+  tx-size:Int
+  rx-size:Int
+  depth:Int
+  pitch:Double
+  width:Double
+  io-power:Double
+
+public defn optimize-link-parameters (link:BoW-link) :
+  ; 16 bits per slice
+  ; Figure out number of stacks, depth to minimize unused pins
+  ; Constraints: width < max-edge-width
+              ;  depth < substrate-routing-layers
+  var min-slices = (width(link) + 16 - 1) / 16
+  val slice-width = 1170.0e-3 * substrate-pitch / 130.0e-3
+  var max-stacks = to-int( max-edge-width(link) / slice-width )
+  max-stacks = (max-stacks - (max-stacks % 2)) / 2
+  val min-depth = (min-slices + max-stacks - 1) / max-stacks
+  if min-depth > substrate-routing-layers : 
+    fatal("BoW link of max width %_ requires more routing layers than substrate can provide" % [max-edge-width(link)])
+  val power = 800.0e-15 * pow(0.75, 2.0) * tx-clk(link) * 16.0 * to-double(max-stacks) * 2.0 * to-double(min-depth)
+  println("Power per BoW link : %_W" % [power])
+  link-parameters(max-stacks, 
+                  max-stacks,
+                  min-depth, 
+                  substrate-pitch, 
+                  to-double(max-stacks) * slice-width
+                  power)
+
+; Generate the bumps for a bunch-of-wires slice
+public pcb-landpattern bunch-of-wires-slice-bumps (pitch:Double, rx?:True|False) :
+
+  val row-1 = if rx? : [ Ref("fec"),   Ref("d")[14], Ref("d")[12], Ref("d")[10], Ref("d")[8], Ref("ck+"),  Ref("d")[6], Ref("d")[4],  Ref("d")[2],  Ref("d")[0]  ]
+    else :             [ Ref("aux"),   Ref("d")[1],  Ref("d")[3],  Ref("d")[5],  Ref("d")[7], Ref("ck-"),  Ref("d")[9], Ref("d")[11], Ref("d")[13], Ref("d")[15]  ]
+  val row-2 = if rx? : [ Ref("d")[15], Ref("d")[13], Ref("d")[11], Ref("d")[9],  Ref("ck-"),  Ref("d")[7], Ref("d")[5], Ref("d")[3],  Ref("d")[1],  Ref("aux") ]
+    else:              [ Ref("d")[0],  Ref("d")[2],  Ref("d")[4],  Ref("d")[6],  Ref("ck+"),  Ref("d")[8], Ref("d")[10],Ref("d")[12], Ref("d")[14], Ref("fec") ]
+  val row-3 =          [ Ref("g")[0]   Ref("g")[1]   Ref("p")[0]   Ref("p")[1]   Ref("g")[2]  Ref("g")[3]  Ref("p")[2]  Ref("p")[3]   Ref("g")[4]   Ref("g")[5] ]
+  val pitch-y = sqrt(3.0) * 0.5 * pitch
+  val rows    = [row-1, row-2, row-3]
+  val row-ys  = [-1.0 * pitch-y, 0.0, pitch-y]
+  val locs    = [
+    row-locs(length(row-1), pitch)
+    seq({loc(pitch * 0.5, 0.0) * _}, row-locs(length(row-2), pitch))
+    row-locs(length(row-3), pitch)
+  ]
+  for (row in rows, row-y in row-ys, poses in locs) do :
+    for (ref in row, pose in poses) do:
+      val pose* = loc(x(center(pose)) - pitch / 4.0, row-y + 320.0e-3 * pitch / 130.0e-3 / 2.0)
+      pad (ref) : bga-pad(pitch / 2.0) at pose*
+  layer(Courtyard(Top)) = Rectangle(1170.0e-3 * pitch / 130.0e-3, 320.0e-3 * pitch / 130.0e-3, loc(0.0, 320.0e-3 * pitch / 130.0e-3 / 2.0))
+
+public pcb-bundle bunch-of-wires :
+  port D : pin[16]
+  pin fec
+  pin aux
+  port clk : diff-pair
+
+public pcb-component bunch-of-wires-slice (pitch:Double, rx?:True|False) :
+  port BoW : bunch-of-wires
+  port power:power
+
+  pin-properties:
+    [pin:Ref     | pads:Ref ...   | side:Dir]
+    if rx? : 
+      for i in 0 to 16 do :
+        [BoW.D[i] | d[i] | Right]
+      [BoW.fec | fec | Right]
+      [BoW.aux | aux | Right]
+      [BoW.clk.P | ck+ | Right]
+      [BoW.clk.N | ck- | Right]
+    else : 
+      for i in 0 to 16 do :
+        [BoW.D[i] | d[i] | Left]
+      [BoW.fec | fec | Left]
+      [BoW.aux | aux | Left]
+      [BoW.clk.P | ck+ | Left]
+      [BoW.clk.N | ck- | Left]
+    [power.gnd | g[0] g[1] g[2] g[3] g[4] g[5] | Down]
+    [power.vdd | p[0] p[1] p[2] p[3] | Up]
+  assign-landpattern(bunch-of-wires-slice-bumps(pitch, rx?))
+  make-box-symbol()
+
+  for i in 0 to 16 do :
+    property(self.BoW.D[i].termination) = "source"
+    property(self.BoW.D[i].data-rate) = 8.0e9
+    property(self.BoW.D[i].Vhi) = 0.75
+
+  property(self.pitch) = pitch
+
+public pcb-module bunch-of-wires-stack (depth:Int, pitch:Double, rx?:True|False):
+  port BoW : bunch-of-wires[depth]
+  inst bumps:bunch-of-wires-slice(pitch, rx?)[depth]
+  val flip-x = if rx? : -1.0 else : 1.0
+  for i in 0 to depth do :
+    place(bumps[i]) at loc(to-double(i % 2) * pitch / 2.0 * flip-x, to-double(i) * 320.0e-3 * pitch / 130.0e-3) on Top
+    net (bumps[i].BoW BoW[i])
+    net (bumps[0].power, bumps[i].power)
+  schematic-group(self) = stack
+
+public pcb-bundle bunch-of-wires-link (tx-size:Int, rx-size:Int):
+  if rx-size > 0 :
+    port rx : bunch-of-wires[rx-size]
+  if tx-size > 0 :
+    port tx : bunch-of-wires[tx-size]
+
+public defn connect-bunch-of-wires (x:JITXObject, y:JITXObject):
+  inside pcb-module :  
+    net (x.rx, y.tx)
+    net (y.rx, x.tx)
+
+public pcb-module bunch-of-wires-link-bumps (tx-size:Int, rx-size:Int, depth:Int, pitch:Double, flip?:True|False):
+  port io:bunch-of-wires-link(tx-size, rx-size)
+  val tx-stacks = (tx-size + depth - 1) / depth
+  val rx-stacks = (rx-size + depth - 1) / depth
+  val stack-locations = to-tuple(row-locs(tx-stacks + rx-stacks, 1300.0e-3 * pitch / 130.0e-3))
+  if tx-size > 0:
+    port tx:bunch-of-wires[depth][tx-stacks]
+    inst tx-slice:bunch-of-wires-stack(depth, pitch, false)[tx-stacks]
+    for i in 0 to tx-stacks do :
+      for j in 0 to depth do :
+        net (tx-slice[i].BoW[j] io.tx[j + i * depth])
+      if flip? :
+        place(tx-slice[i]) at stack-locations[tx-stacks - i - 1] on Top
+      else :
+        place(tx-slice[i]) at stack-locations[i] on Top
+    port rx:bunch-of-wires[depth][rx-size]
+    inst rx-slice:bunch-of-wires-stack(depth, pitch, true)[rx-stacks]
+    for i in 0 to rx-stacks do :
+      for j in 0 to depth do :
+        net (rx-slice[i].BoW[j] io.rx[j + i * depth])
+      if flip? :
+        place(rx-slice[i]) at stack-locations[tx-stacks + rx-stacks - i - 1] on Top
+      else :
+        place(rx-slice[i]) at stack-locations[tx-stacks + i] on Top
+
+public defn bunch-of-wires-link-bumps (link:link-parameters, flip?:True|False) :
+  bunch-of-wires-link-bumps(tx-size(link) * depth(link), rx-size(link) * depth(link), depth(link), pitch(link), flip?)
+
+public pcb-module chiplet (link:BoW-link) :
+
+  public inst chiplet-link : bunch-of-wires-link-bumps(optimize-link-parameters(link), true)
+  place(chiplet-link) at loc(0.0, 0.0) on Top
+  val shape = Rectangle(max-edge-width(link), 5.0)
+  inst label-silk : label-comp(shape, "CCX")
+  place(label-silk) at loc(0.0, 2.5) on Top
+
+public pcb-module io-chiplet (link:BoW-link) :
+  val shape = Rectangle(max-edge-width(link) * 5.0, 2.0)
+  public inst chiplet-link : bunch-of-wires-link-bumps(optimize-link-parameters(link), false)[5]
+  for i in 0 to 5 do :
+    place(chiplet-link[i]) at loc(max-edge-width(link) * to-double(i - 2), 0.0) on Top
+  inst label-silk : label-comp(shape, "IO")
+  place(label-silk) at loc(0.0, 1.0) on Top
+
+public pcb-module chiplet-system (link:BoW-link) :
+  inst io : io-chiplet(link)
+  place(io) at loc(0.0 0.0) on Top
+  inst core : chiplet(link)[5]
+  for i in 0 to 5 do:
+    place(core[i]) at loc(max-edge-width(link) * to-double(i - 2), 0.0, 180.0) on Top
+    connect-bunch-of-wires(io.chiplet-link[i].io core[i].chiplet-link.io)
+
+public pcb-module chiplet (lbl:String, N:[Int Int]|False, S:[Int Int]|False, E:[Int Int]|False, W:[Int Int]|False, depth:Int, pitch:Double, shape:Rectangle) :
+
+  match(N:[Int Int]):
+    inst north-link : bunch-of-wires-link-bumps(N[0] N[1], depth, pitch, true)
+    port north-io:bunch-of-wires-link(N[0] N[1])
+    net (north-io north-link.io)
+    place(north-link) at loc(0.0, height(shape) / 2.0, 180.0) on Top
+  match(S:[Int Int]):
+    inst south-link : bunch-of-wires-link-bumps(S[0] S[1], depth, pitch, false)
+    port south-io:bunch-of-wires-link(S[0] S[1])
+    net (south-io south-link.io)
+    place(south-link) at loc(0.0, height(shape) / -2.0, 0.0) on Top
+  match(E:[Int Int]):
+    inst east-link : bunch-of-wires-link-bumps(E[0] E[1], depth, pitch, false)
+    port east-io:bunch-of-wires-link(E[0] E[1])
+    net (east-io east-link.io)
+    place(east-link) at loc(width(shape) / 2.0, 0.0, 90.0) on Top
+  match(W:[Int Int]):
+    inst west-link : bunch-of-wires-link-bumps(W[0] W[1], depth, pitch, true)
+    port west-io:bunch-of-wires-link(W[0] W[1])
+    net (west-io west-link.io)
+    place(west-link) at loc(width(shape) / -2.0, 0.0, -90.0) on Top
+
+  inst label-silk : label-comp(shape, lbl)
+  place(label-silk) at loc(0.0, 0.0) on Top
+
+
+public pcb-module bidirectional-ring (bandwidth:Double, depth:Int, slice:Instantiable) :
+
+  inst c : slice
+  val link-size = to-int(bandwidth / property(c.BoW.D[0].data-rate) / 16.0 + 0.5)
+  val dim = to-double(link-size / depth) * property(c.pitch) * 2.0 * 10.0 + 1.0
+  val width = dim + property(c.pitch) * to-double(depth) * 3.0 * 2.0
+  val ext = Rectangle(width, dim)
+
+  inst ne : chiplet("A", false, [link-size link-size] [link-size link-size] false, depth, property(c.pitch),ext) 
+  inst nw : chiplet("B", false, [link-size link-size] false [link-size link-size], depth, property(c.pitch),ext) 
+  inst sw : chiplet("C", [link-size link-size] false false [link-size link-size] , depth, property(c.pitch),ext) 
+  inst se : chiplet("D", [link-size link-size] false [link-size link-size] false, depth, property(c.pitch),ext) 
+  place(ne) at loc(width / -2.0, dim / 2.0) on Top
+  place(nw) at loc(width / 2.0, dim / 2.0) on Top
+  place(sw) at loc(width / 2.0, dim / -2.0) on Top
+  place(se) at loc(width / -2.0, dim / -2.0) on Top
+
+  connect-bunch-of-wires(nw.west-io ne.east-io)
+  connect-bunch-of-wires(sw.west-io se.east-io)
+  connect-bunch-of-wires(sw.north-io nw.south-io)
+  connect-bunch-of-wires(se.north-io ne.south-io)

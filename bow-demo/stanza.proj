@@ -1,0 +1,3 @@
+include "../ocdb/stanza.proj"
+package bow-utils defined-in "bow-utils.stanza"
+package chiplet-rules defined-in "chiplet-rules.stanza"

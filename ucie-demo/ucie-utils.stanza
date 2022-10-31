@@ -32,7 +32,7 @@ public pcb-enum ucie-utils/UCIE-PKGTYPE :
   UCIe-Advanced   ; advanced package 64b with redundancy
   UCIe-Standard   ; standard package 16b with no redundancy
 
-public pcb-struct ucie-utils/UCIe-bumps-parameters :
+public pcb-struct ucie-utils/UCIe-module-parameters :
   data-width : Int ; 16 or 64
   tx-clk-freq : Double   ; Bit rate/wire = 2x tx-clk
   rx-clk-freq : Double
@@ -72,7 +72,7 @@ public pcb-bundle UCIe-interface (type : ucie-utils/UCIE-PKGTYPE):
       port TXDATA : pin[16] ; 16 Transmit Data
       port RXDATA : pin[16] ; 16 Receive Data
 
-public defn connect-ucie-bumps (type : ucie-utils/UCIE-PKGTYPE, t:JITXObject, r:JITXObject):
+public defn connect-ucie-module (type : ucie-utils/UCIE-PKGTYPE, t:JITXObject, r:JITXObject):
   inside pcb-module :
     net (t.ucie.TXDATA   r.ucie.RXDATA  )
     net (t.ucie.RXDATA   r.ucie.TXDATA  )
@@ -291,7 +291,7 @@ public pcb-landpattern ucie-bumps (type: ucie-utils/UCIE-PKGTYPE, pitch:Double) 
   calc-loc("txcksbRD", txcksbRD-sites, pitch)
   layer(Courtyard(Top)) = Rectangle(11.0 * pitch, 46.0 * pitch, loc(4.5 * pitch, 22.5 * pitch))
 
-public pcb-component ucie-bumps (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
+public pcb-component ucie-module (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
   port ucie : UCIe-interface(type)
 
   val vss-pins = to-tuple $ 
@@ -345,8 +345,8 @@ public pcb-component ucie-bumps (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
   property(self.rated-temperature) = RatedTemperature(min-max(-40.0, 85.0))
 
 public pcb-module ucie-retimer (pitch:Double):
-  public inst a : ucie-utils/ucie-bumps(UCIe-Advanced, pitch)
-  public inst b : ucie-utils/ucie-bumps(UCIe-Advanced, pitch)
+  public inst a : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+  public inst b : ucie-utils/ucie-module(UCIe-Advanced, pitch)
 
   place(a) at loc(-1.0 * property(a.width) / 2.0, -1.0 * property(a.height) / 2.0, 0.0) on Top
   place(b) at loc( 1.0 * property(a.width) / 2.0, 0.5 + 1.0 * property(a.height) / 2.0, 180.0) on Top
@@ -363,10 +363,10 @@ public pcb-module ucie-switch (pitch:Double):
   pin gnd
   pin vddao
   
-  public inst n : ucie-utils/ucie-bumps(UCIe-Advanced, pitch)
-  public inst e : ucie-utils/ucie-bumps(UCIe-Advanced, pitch)
-  public inst s : ucie-utils/ucie-bumps(UCIe-Advanced, pitch)
-  public inst w : ucie-utils/ucie-bumps(UCIe-Advanced, pitch)
+  public inst n : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+  public inst e : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+  public inst s : ucie-utils/ucie-module(UCIe-Advanced, pitch)
+  public inst w : ucie-utils/ucie-module(UCIe-Advanced, pitch)
 
   net (n-conn n.ucie)
   net (s-conn s.ucie)
