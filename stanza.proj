@@ -1,4 +1,4 @@
-include "open-components-database/stanza.proj"
+include "ocdb/stanza.proj"
 package ucie-utils defined-in "ucie-demo/ucie-utils.stanza"
 package ucie-rules defined-in "ucie-demo/ucie-rules.stanza"
 include "bow-demo/stanza.proj"
