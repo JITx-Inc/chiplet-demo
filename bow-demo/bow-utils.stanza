@@ -16,6 +16,21 @@ defpackage bow-utils :
   import ocdb/utils/symbols
   import ocdb/manufacturers/rules
 
+pcb-landpattern io-bumps (n:Int, pitch:Double):
+  make-bga-landpattern(8, (n / 4 + 1), pitch, pitch / 2.0, typ(0.0) typ(0.0) StaggeredMatrix())
+
+public pcb-component io-block (interface:PortType, pitch:Double) :
+  port io : interface
+
+  val land  = io-bumps(length(pins(io)), pitch)
+  pin-properties :
+    [ pin : Ref | pads : Ref ... | side:Dir ]
+    for (pi in pins(io), p in pads(land)) do :
+      [ (ref(pi))     | (ref(p))           | Left ]
+    
+  assign-landpattern(land)
+  make-box-symbol()
+
 public pcb-landpattern label-silk (shape:Rectangle, text:String) : 
   layer(Silkscreen("f-silk", Top)) = Text(text, 1.0, C, loc(0.0, 0.0))
   layer(Silkscreen("f-silk", Top)) = LineRectangle(width(shape), height(shape), 0.0, 0.0, 5.0e-2)

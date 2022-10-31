@@ -304,36 +304,36 @@ public pcb-component ucie-module (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
       Ref("vccfwdio")[i]
 
   pin-properties :
-    [pin:Ref          | pads:Ref ... | side:Dir  ]
+    [pin:Ref          | pads:Ref ... | side:Dir | bank:Ref ]
     for i in 0 to 64 do :
-      [ucie.TXDATA[i] | txdata[i]         |    Right  ]
-      [ucie.RXDATA[i] | rxdata[i]         |    Left   ]
+      [ucie.TXDATA[i] | txdata[i]         |    Right | tx ]
+      [ucie.RXDATA[i] | rxdata[i]         |    Left  | rx ]
     for i in 0 to 4 do :
-      [ ucie.TXRD[i]  | txdataRD[i]       |    Right  ]  ; 4 Redundant for data Lane repair
-      [ ucie.RXRD[i]  | rxdataRD[i]       |    Left   ]  ; 4 Redundant for data Lane repair
-    [ ucie.TXCKRD     | txckRD            |    Right  ]  ; 1 Redundant for clock and track Lane repair
-    [ ucie.RXCKRD     | rxckRD            |    Left   ]  ; 1 Redundant for clock Lane repair
-    [ ucie.TXDATASBRD | txdatasbRD        |    Right  ]  ; 1 Redundant Sideband Transmit Data
-    [ ucie.RXDATASBRD | rxdatasbRD        |    Left   ]  ; 1 Redundant Sideband Receiver Data
-    [ ucie.TXCKSBRD   | txcksbRD          |    Right  ]  ; 1 Redundant Sideband Transmit Clock
-    [ ucie.RXCKSBRD   | rxcksbRD          |    Left   ]  ; 1 Redundant Sideband Receive Clock
-    [ ucie.TXVLDRD    | txvldRD           |    Right  ]  ; 1 Transmit Data Valid Redundant
-    [ ucie.RXVLDRD    | rxvldRD           |    Left   ]  ; 1 Receive Data Valid; Redundant
-    [ ucie.TXVLD      | txvld             |    Right  ]       ; 1 Transmit Data Valid; Enables clocking in corresponding module
-    [ ucie.TXTRK      | txtrk             |    Right  ]       ; 1 Transmit track signal
-    [ ucie.TXCKP      | txckp             |    Right  ]       ; 1 Transmit Clock phase 1
-    [ ucie.TXCKN      | txckn             |    Right  ]       ; 1 Transmit Clock phase 2
-    [ ucie.RXVLD      | rxvld             |    Left   ]       ; 1 Receive Data Valid; Enables clocking in corresponding module
-    [ ucie.RXTRK      | rxtrk             |    Left   ]       ; 1 Receive track.
-    [ ucie.RXCKP      | rxckp             |    Left   ]       ; 1 Receive Clock phase 1
-    [ ucie.RXCKN      | rxckn             |    Left   ]       ; 1 Receive Clock phase 2
-    [ ucie.TXDATASB   | txdatasb          |    Right  ]       ; 1 Sideband Transmit Data
-    [ ucie.RXDATASB   | rxdatasb          |    Left   ]       ; 1 Sideband Receiver Data
-    [ ucie.TXCKSB     | txcksb            |    Right  ]       ; 1 Sideband Transmit Clock
-    [ ucie.RXCKSB     | rxcksb            |    Left   ]       ; 1 Sideband Receive Clock
-    [ ucie.VSS        | vss-pins ...      |    Down   ]
-    [ ucie.VCCIO      | vccio-pins ...    |    Up     ]
-    [ ucie.VCCAON     | vccfwdio-pins ... |    Up     ]
+      [ ucie.TXRD[i]  | txdataRD[i]       |    Right | redundancy ]  ; 4 Redundant for data Lane repair
+      [ ucie.RXRD[i]  | rxdataRD[i]       |    Left  | redundancy  ]  ; 4 Redundant for data Lane repair
+    [ ucie.TXCKRD     | txckRD            |    Right | redundancy ]  ; 1 Redundant for clock and track Lane repair
+    [ ucie.RXCKRD     | rxckRD            |    Left  | redundancy ]  ; 1 Redundant for clock Lane repair
+    [ ucie.TXDATASBRD | txdatasbRD        |    Right | redundancy ]  ; 1 Redundant Sideband Transmit Data
+    [ ucie.RXDATASBRD | rxdatasbRD        |    Left  | redundancy ]  ; 1 Redundant Sideband Receiver Data
+    [ ucie.TXCKSBRD   | txcksbRD          |    Right | redundancy ]  ; 1 Redundant Sideband Transmit Clock
+    [ ucie.RXCKSBRD   | rxcksbRD          |    Left  | redundancy ]  ; 1 Redundant Sideband Receive Clock
+    [ ucie.TXVLDRD    | txvldRD           |    Right | redundancy ]  ; 1 Transmit Data Valid Redundant
+    [ ucie.RXVLDRD    | rxvldRD           |    Left  | redundancy ]  ; 1 Receive Data Valid; Redundant
+    [ ucie.TXVLD      | txvld             |    Right | tx ]       ; 1 Transmit Data Valid; Enables clocking in corresponding module
+    [ ucie.TXTRK      | txtrk             |    Right | tx ]       ; 1 Transmit track signal
+    [ ucie.TXCKP      | txckp             |    Right | tx ]       ; 1 Transmit Clock phase 1
+    [ ucie.TXCKN      | txckn             |    Right | tx ]       ; 1 Transmit Clock phase 2
+    [ ucie.RXVLD      | rxvld             |    Left  | rx ]       ; 1 Receive Data Valid; Enables clocking in corresponding module
+    [ ucie.RXTRK      | rxtrk             |    Left  | rx ]       ; 1 Receive track.
+    [ ucie.RXCKP      | rxckp             |    Left  | rx ]       ; 1 Receive Clock phase 1
+    [ ucie.RXCKN      | rxckn             |    Left  | rx ]       ; 1 Receive Clock phase 2
+    [ ucie.TXDATASB   | txdatasb          |    Right | tx ]       ; 1 Sideband Transmit Data
+    [ ucie.RXDATASB   | rxdatasb          |    Left  | rx ]       ; 1 Sideband Receiver Data
+    [ ucie.TXCKSB     | txcksb            |    Right | tx ]       ; 1 Sideband Transmit Clock
+    [ ucie.RXCKSB     | rxcksb            |    Left  | rx ]       ; 1 Sideband Receive Clock
+    [ ucie.VSS        | vss-pins ...      |    Down  | power ]
+    [ ucie.VCCIO      | vccio-pins ...    |    Up    | power ]
+    [ ucie.VCCAON     | vccfwdio-pins ... |    Up    | power ]
 
   assign-landpattern(ucie-bumps(UCIe-Advanced, pitch))
   make-box-symbol()

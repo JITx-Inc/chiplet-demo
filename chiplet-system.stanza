@@ -9,74 +9,146 @@ defpackage chiplet-system :
 
   import ocdb/utils/bundles
 
+  import ocdb/utils/landpatterns
+  import ocdb/utils/box-symbol
+  
   import ucie-utils
   import bow-utils
+
 ; ==========================================
 ; Implement other modules used by our design 
 ; ==========================================
+
 pcb-bundle system-io :
   port jtag : jtag()
+  ; TODO upgrade to real DDR4 interface
   port ddr4 : diff-pair
 
 pcb-module compute-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst bamps : ucie-module(UCIe-Advanced, 9.0e-1)
-  place(bamps) at loc(0.0, 0.0) on Top
-  net (bamps.ucie ucie)
+  inst uclane : ucie-module(UCIe-Advanced, 9.0e-2)
+  net (uclane.ucie ucie)
 
+  inst hublane : ucie-module(UCIe-Advanced, 9.0e-2)
+  net (hublane.ucie ucie)
+
+  inst jtag-interface : io-block(jtag(), 9.0e-2)
+  net (jtag-interface.io system-io.jtag)
+
+
+  place(uclane) at loc(0.0, 0.0) on Top
+  place(hublane) at loc(2.0, 0.0) on Top
+  place(jtag-interface) at loc(-2.0, 0.0) on Top
+
+  property(self.shape) = Rectangle(5.0, 5.0)
+  property(self.thickness) = 0.5
+  property(self.PDK) = "Intel-18A"
+  property(self.RTL) = "compute.vl" ; some model - composed of smaller models
+  layer(Courtyard(Top)) = property(self.shape)
+  schematic-group(uclane) = compute-1
+  schematic-group(hublane) = compute-2
+
+pcb-module graphics-chiplet :
+  port system-io : system-io
+  port ucie : UCIe-interface(UCIe-Advanced)
+
+  inst uclane : ucie-module(UCIe-Advanced, 7.0e-2)
+  place(uclane) at loc(0.0, 0.0) on Top
+  net (uclane.ucie ucie)
 
   property(self.thickness) = 0.5
   property(self.shape) = Rectangle(5.0, 5.0)
-  property(self.PDK) = "Intel-18A"
-  property(self.RTL) = "compute.vl" ; some model - composed of smaller models
+  property(self.PDK) = "Intel-4"
+  property(self.RTL) = "graphics.vl" ; some model - composed of smaller models
+  layer(Courtyard(Top)) = property(self.shape)
+  schematic-group(self) = graphics
 
-; pcb-module graphics-chiplet () :
-;   manufacturer          = "Intel"
+pcb-module hub-chiplet :
+  port system-io : system-io
+  port ucie : UCIe-interface(UCIe-Advanced)
 
-; pcb-component hub-chiplet () :
-;   manufacturer          = "Intel"
+  inst uclane : ucie-module(UCIe-Advanced, 7.0e-2)
+  place(uclane) at loc(0.0, 0.0) on Top
+  net (uclane.ucie ucie)
 
+  ; TODO upgrade to real DDR4 interface
+  inst ddr-interface : io-block(diff-pair, 9.0e-2)
+  place(ddr-interface) at loc(-2.0, 0.0) on Top
+  net (ddr-interface.io system-io.ddr4)
 
+  property(self.thickness) = 0.5
+  property(self.shape) = Rectangle(5.0, 5.0)
+  property(self.PDK) = "Intel-4"
+  property(self.RTL) = "hub.vl" ; some model - composed of smaller models
+  layer(Courtyard(Top)) = property(self.shape)
+  schematic-group(self) = hub
+
+pcb-landpattern interposer-lp (pitch:Double, side:Side):
+  pcb-pad square-pad :
+    type = SMD
+    shape = Rectangle(pitch / 2.0, pitch / 2.0)
+  for (l in grid-locs(20, 20, pitch, pitch), i in 0 to false) do :
+    pad p[i] : square-pad at l on side
+
+pcb-component interposer-package-interface (pitch:Double, side:Side):
+  port system-io : system-io
+  val land = interposer-lp(pitch, side)
+  pin-properties :
+    [ pin : Ref | pads : Ref ... | side:Dir ]
+    for (p in pins(system-io), pa in pads(land)) do :
+      [ (ref(p))   | (ref(pa))           | Left ]
+  assign-landpattern(land)
+  make-box-symbol()    
+  
 pcb-module interposer :
+  port system-io : system-io
+
   inst compute : compute-chiplet
-  inst graphics : compute-chiplet
+  inst graphics : graphics-chiplet
+  inst hub : hub-chiplet
 
   net (compute.ucie graphics.ucie)
+  net (compute.ucie hub.ucie)
 
+  inst package-interface : interposer-package-interface(0.2, Bottom)
+  net (package-interface.system-io compute.system-io graphics.system-io hub.system-io system-io)
 
+  place(package-interface) at loc(0.0, 0.0) on Top
 
-; pcb-module chiplet-system (Package:True|False):
+pcb-landpattern package-lp (pitch:Double, side:Side):
+  pcb-pad square-pad :
+    type = SMD
+    shape = Circle(pitch / 4.0)
+  for (l in grid-locs(20, 20, pitch, pitch), i in 0 to false) do :
+    pad p[i] : square-pad at l on side
 
-;   port package-jtag : jtag
-;   port memory : DDR4
+pcb-component package-board-interface (pitch:Double, side:Side):
+  port system-io : system-io
+  val land = package-lp(pitch, side)
+  pin-properties :
+    [ pin : Ref | pads : Ref ... | side:Dir ]
+    for (p in pins(system-io), pa in pads(land)) do :
+      [ (ref(p))   | (ref(pa))           | Left ]
+  assign-landpattern(land)
+  make-box-symbol()    
 
-;   ; z-stacking
-;   inst base : interposer
-;   inst hub : hub-chiplet
-;   inst compute : compute-chiplet
-;   inst graphics : graphics-chiplet
+pcb-module package :
+  port system-io : system-io
 
-;   ; place(base) and everything else.
+  inst interposer-interface : interposer-package-interface(0.2, Top)
+  inst board-interface : package-board-interface(0.6, Bottom)
+  net (system-io board-interface.system-io interposer-interface.system-io)
 
-;   ; width is known - could vary in number
-;   net-through(base, compute.ucie graphics.ucie); Has pre-defined bump map
-;   net-through(base, compute.jtag package-jtag) ; Has pre-defined bump map
-;   net-through(base, hub.ddr4 memory) ; JEDEC - has bump map for DDR4
+  place(interposer-interface) at loc(0.0, 0.0) on Top
+  place(board-interface) at loc(0.0, 0.0) on Top
 
-;   if Package:
-;     inst balls : bga-pattern
-;     net (package-jtag balls.jtag)
+pcb-module board :
+  port system-io : system-io
 
-; make-design(chiplet-system(False))
-
-; pcb-module board :
-;   inst package : chiplet-system(True)
-;   inst memory : dimms
-
-;   net (package.DDR4 memory.DDR4)
-  ;  Other board components. Power, etc...
+  inst board-interface : package-board-interface(0.6, Top)
+  net (system-io board-interface.system-io)
 
 ; When you run this:
 ;  - Design creation - look at schematics (package and board), bump patterns for chiplets
@@ -155,4 +227,4 @@ defn export-bill-of-materials () :
 ; ============
 ; Run the code
 ; ============
-compile-design(interposer)
+compile-design(board)
