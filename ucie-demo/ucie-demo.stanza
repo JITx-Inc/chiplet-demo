@@ -146,13 +146,13 @@ pcb-module array-chiplet-system (num-rows:Int, num-cols:Int, pitch:Double) :
         connect-ucie-module(UCIe-Advanced, s[index].s, s[index + num-cols].n)
 
 pcb-module chiplet-design :
-  inst chiplet : one-module(bump-pitch) 
+  ; inst chiplet : one-module(bump-pitch) 
   ; inst chiplet : one-retimer
   ; inst chiplet : single-switch
   ; inst chiplet :  simple-chiplet-system(3)
   ; inst chiplet : ns-chiplet-system(5, s-offset) 
   ; inst chiplet : cardinal-chiplet-system(5, s-offset) 
-  ; inst chiplet : array-chiplet-system(num-rows, num-cols, s-offset)
+  inst chiplet : array-chiplet-system(num-rows, num-cols, s-offset)
   place(chiplet) at loc(0.0, 0.0) on Top
 
 ; ==========================================
