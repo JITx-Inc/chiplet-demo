@@ -1,3 +1,4 @@
 include "ocdb/stanza.proj"
 package ucie-utils defined-in "ucie-demo/ucie-utils.stanza"
 package ucie-rules defined-in "ucie-demo/ucie-rules.stanza"
+package chiplet-system defined-in "ucie-demo/chiplet-system.stanza"
