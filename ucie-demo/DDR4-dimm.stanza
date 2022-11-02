@@ -31,13 +31,13 @@ pcb-landpattern DDR4-socket :
 
   for (i in 0 to 288, l in grid-locs(2, 144, 0.85, 4.6)) do :
     if i < 77:
-      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(0.0, 0.0) * l on Top
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(0.0, -4.6) * l on Top
     else if i < 144:
-      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(5.95 - 0.85, 0.0) * l on Top
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(5.95 - 0.85, -4.6) * l on Top
     else if i < 145 + 76:
-      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(0.0, 0.0) * l on Top
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(0.0, 4.6) * l on Top
     else if i < 288:
-      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(5.95 - 0.85, 0.0) * l on Top
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(5.95 - 0.85, 4.6) * l on Top
 
   pad MH1 : circle-th-pad at loc(-68.975 + 5.95 / 2.0, 0.00) on Top
   pad MH2 : circle-th-pad at loc( 68.975 + 5.95 / 2.0, 0.00) on Top
