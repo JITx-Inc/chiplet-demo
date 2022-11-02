@@ -17,7 +17,6 @@ defpackage ucie-utils :
   import ocdb/manufacturers/rules
   import ocdb/utils/property-structs
 
-
 public pcb-landpattern label-silk (shape:Rectangle, text:String) : 
   layer(Silkscreen("f-silk", Top)) = Text(text, 0.05, C, loc(0.0, 0.0))
   layer(Silkscreen("f-silk", Top)) = LineRectangle(width(shape), height(shape), 0.0, 0.0, 5.0e-3)

@@ -1,0 +1,423 @@
+#use-added-syntax(jitx)
+defpackage DDR4-dimm :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/utils/defaults
+  import ocdb/utils/generic-components
+  import ocdb/utils/bundles
+  import ocdb/utils/landpatterns
+  import ocdb/utils/design-vars
+  import ocdb/utils/generator-utils
+  import ocdb/utils/checks
+  import ocdb/utils/box-symbol
+  import ocdb/utils/symbols
+  import ocdb/manufacturers/rules
+  import ocdb/utils/property-structs
+
+  import DDR4-bundle
+
+pcb-pad circle-th-pad :
+  type = TH
+  shape = Circle(2.45)
+  layer(SolderMask(Top)) = Circle(2.45)
+  layer(SolderMask(Bottom)) = Circle(2.45)
+  layer(Cutout()) = Circle(2.45)
+
+
+pcb-landpattern DDR4-socket :
+
+  for (i in 0 to 288, l in grid-locs(2, 144, 0.85, 4.6)) do :
+    if i < 77:
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(0.0, -4.6) * l on Top
+    else if i < 144:
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(5.95 - 0.85, -4.6) * l on Top
+    else if i < 145 + 76:
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(0.0, 4.6) * l on Top
+    else if i < 288:
+      pad p[i + 1] : smd-pad(0.57, 1.80) at loc(5.95 - 0.85, 4.6) * l on Top
+
+  pad MH1 : circle-th-pad at loc(-68.975 + 5.95 / 2.0, 0.00) on Top
+  pad MH2 : circle-th-pad at loc( 68.975 + 5.95 / 2.0, 0.00) on Top
+
+  layer(Courtyard(Top))  = Rectangle(162.0, 6.50)
+  ref-label()
+
+
+public pcb-component component :
+  reference-prefix = "J"
+  manufacturer = "Molex"
+  mpn = "787301002"
+
+  pin-properties :
+    [ pin:Ref            | pads:Int ... | side:Dir  ]
+    [ A0                 |  79          |  Left     ]   ; Register address input 
+    [ A1                 |  72          |  Left     ]
+    [ A2                 |  216         |  Left     ]
+    [ A3                 |  71          |  Left     ]
+    [ A4                 |  214         |  Left     ]
+    [ A5                 |  213         |  Left     ]
+    [ A6                 |  69          |  Left     ]
+    [ A7                 |  211         |  Left     ]
+    [ A8                 |  68          |  Left     ]
+    [ A9                 |  66          |  Left     ]
+    [ A10                |  225         |  Left     ]
+    [ A11                |  210         |  Left     ]
+    [ A12                |  65          |  Left     ]
+    [ A13                |  232         |  Left     ]
+    [ A14                |  228         |  Left     ]   ; WE_n/ Register write enable input 
+    [ A15                |  86          |  Left     ]   ; CAS_n/ Register column address strobe input 
+    [ A16                |  82          |  Left     ]   ; RAS_n/ Register row address strobe input 
+    [ A17                |  234         |  Left     ]
+    [ ACT_n              |  62          |  Right    ]   ; Register input for activate input 
+    [ ALERT_n            |  208         |  Right    ]   ; Register ALERT_n output
+    [ BA0                |  81          |  Left     ]   ; Register bank select input 
+    [ BA1                |  224         |  Left     ]
+    [ BG0                |  63          |  Left     ]   ; Register bank group select input 
+    [ BG1                |  207         |  Left     ]
+    [ CB0                |  49          |  Left     ]   ; DIMM ECC check bits 
+    [ CB1                |  194         |  Left     ]
+    [ CB2                |  56          |  Left     ]
+    [ CB3                |  201         |  Left     ]
+    [ CB4                |  47          |  Left     ]
+    [ CB5                |  192         |  Left     ]
+    [ CB6                |  54          |  Left     ]
+    [ CB7                |  199         |  Left     ]
+    [ CK0_c              |  75          |  Left     ]   ; Register clocks input (negative line of differential pair) 
+    [ CK0_t              |  74          |  Left     ]   ; Register clock input (positive line of differential pair) 
+    [ CK1_c              |  219         |  Left     ]
+    [ CK1_t              |  218         |  Left     ]
+    [ CKE0               |  60          |  Left     ]   ; Register clock enable lines input 
+    [ CKE1               |  203         |  Left     ]
+    [ CS0_n              |  84          |  Left     ]   ; DIMM Rank Select Lines input 
+    [ CS1_n              |  89          |  Left     ]
+    [ CS2_n/C0           |  93          |  Left     ]
+    [ CS3_n/C1           |  237         |  Left     ]
+    [ C2                 |  235         |  Left     ]   ; Chip ID lines for SDRAMs
+    [ DQ0                |  5           |  Right    ]   ; DIMM memory data bus 
+    [ DQ1                |  150         |  Right    ]
+    [ DQ2                |  12          |  Right    ]
+    [ DQ3                |  157         |  Right    ]
+    [ DQ4                |  3           |  Right    ]
+    [ DQ5                |  148         |  Right    ]
+    [ DQ6                |  10          |  Right    ]
+    [ DQ7                |  155         |  Right    ]
+    [ DQ8                |  16          |  Right    ]
+    [ DQ9                |  161         |  Right    ]
+    [ DQ10               |  23          |  Right    ]
+    [ DQ11               |  168         |  Right    ]
+    [ DQ12               |  14          |  Right    ]
+    [ DQ13               |  159         |  Right    ]
+    [ DQ14               |  21          |  Right    ]
+    [ DQ15               |  166         |  Right    ]
+    [ DQ16               |  27          |  Right    ]
+    [ DQ17               |  172         |  Right    ]
+    [ DQ18               |  34          |  Right    ]
+    [ DQ19               |  179         |  Right    ]
+    [ DQ20               |  25          |  Right    ]
+    [ DQ21               |  170         |  Right    ]
+    [ DQ22               |  32          |  Right    ]
+    [ DQ23               |  177         |  Right    ]
+    [ DQ24               |  38          |  Right    ]
+    [ DQ25               |  183         |  Right    ]
+    [ DQ26               |  45          |  Right    ]
+    [ DQ27               |  190         |  Right    ]
+    [ DQ28               |  36          |  Right    ]
+    [ DQ29               |  181         |  Right    ]
+    [ DQ30               |  43          |  Right    ]
+    [ DQ31               |  188         |  Right    ]
+    [ DQ32               |  97          |  Right    ]
+    [ DQ33               |  242         |  Right    ]
+    [ DQ34               |  104         |  Right    ]
+    [ DQ35               |  249         |  Right    ]
+    [ DQ36               |  95          |  Right    ]
+    [ DQ37               |  240         |  Right    ]
+    [ DQ38               |  102         |  Right    ]
+    [ DQ39               |  247         |  Right    ]
+    [ DQ40               |  108         |  Right    ]
+    [ DQ41               |  253         |  Right    ]
+    [ DQ42               |  115         |  Right    ]
+    [ DQ43               |  260         |  Right    ]
+    [ DQ44               |  106         |  Right    ]
+    [ DQ45               |  251         |  Right    ]
+    [ DQ46               |  113         |  Right    ]
+    [ DQ47               |  258         |  Right    ]
+    [ DQ48               |  119         |  Right    ]
+    [ DQ49               |  264         |  Right    ]
+    [ DQ50               |  126         |  Right    ]
+    [ DQ51               |  271         |  Right    ]
+    [ DQ52               |  117         |  Right    ]
+    [ DQ53               |  262         |  Right    ]
+    [ DQ54               |  124         |  Right    ]
+    [ DQ55               |  269         |  Right    ]
+    [ DQ56               |  130         |  Right    ]
+    [ DQ57               |  275         |  Right    ]
+    [ DQ58               |  137         |  Right    ]
+    [ DQ59               |  282         |  Right    ]
+    [ DQ60               |  128         |  Right    ]
+    [ DQ61               |  273         |  Right    ]
+    [ DQ62               |  135         |  Right    ]
+    [ DQ63               |  280         |  Right    ]
+    [ DQS0_c             |  152         |  Right    ]       ; Data Buffer data strobes (negative line of differential pair) 
+    [ DQS0_t             |  153         |  Right    ]       ; Data Buffer data strobes (positive line of differential pair) 
+    [ DQS1_c             |  163         |  Right    ]
+    [ DQS1_t             |  164         |  Right    ]
+    [ DQS2_c             |  174         |  Right    ]
+    [ DQS2_t             |  175         |  Right    ]
+    [ DQS3_c             |  185         |  Right    ]
+    [ DQS3_t             |  186         |  Right    ]
+    [ DQS4_c             |  244         |  Right    ]
+    [ DQS4_t             |  245         |  Right    ]
+    [ DQS5_c             |  255         |  Right    ]
+    [ DQS5_t             |  256         |  Right    ]
+    [ DQS6_c             |  266         |  Right    ]
+    [ DQS6_t             |  267         |  Right    ]
+    [ DQS7_c             |  277         |  Right    ]
+    [ DQS7_t             |  278         |  Right    ]
+    [ DQS8_c             |  196         |  Right    ]
+    [ DQS8_t             |  197         |  Right    ]
+    [ DQS9_c/TDQS9_c     |  8           |  Right    ]   ; Dummy loads for mixed populations of x4 based and x8 based RDIMMs.
+    [ DQS9_t/TDQS9_t     |  7           |  Right    ]
+    [ DQS10_c/TDQS10_c   |  19          |  Right    ]
+    [ DQS10_t/TDQS10_t   |  18          |  Right    ]
+    [ DQS11_c/TDQS11_c   |  30          |  Right    ]
+    [ DQS11_t/TDQS11_t   |  29          |  Right    ]
+    [ DQS12_c/TDQS12_c   |  41          |  Right    ]
+    [ DQS12_t/TDQS12_t   |  40          |  Right    ]
+    [ DQS13_c/TDQS13_c   |  100         |  Right    ]
+    [ DQS13_t/TDQ13_t    |  99          |  Right    ]
+    [ DQS14_c/TDQS14_c   |  111         |  Right    ]
+    [ DQS14_t/TDQS14_t   |  110         |  Right    ]
+    [ DQS15_c/TDQS15_c   |  122         |  Right    ]
+    [ DQS15_t/TDQS15_t   |  121         |  Right    ]
+    [ DQS16_c/TDQS16_c   |  133         |  Right    ]
+    [ DQS16_t/TDQS16_t   |  132         |  Right    ]
+    [ DQS17_c/TDQS17_c   |  52          |  Right    ]
+    [ DQS17_t/TDQS17_t   |  51          |  Right    ]
+    [ EVENT_n            |  78          |  Right    ]   ; SPD signals a thermal event has occurred.
+    [ NC                 |  144 145 205 227 230 | Down ]
+    [ ODT0               |  87          |  Left     ]    ; Register on-die termination control lines input 
+    [ ODT1               |  91          |  Left     ]
+    [ PARITY             |  222         |  Left     ]    ; Register parity input
+    [ RESET_n            |  58          |  Left     ]    ; Set Register and SDRAMs to a Known State
+    [ SA0                |  139         |  Left     ]    ; I2C slave address select for SPD-TSE and register
+    [ SA1                |  140         |  Left     ]
+    [ SA2                |  238         |  Left     ]
+    [ SCL                |  141         |  Left     ]    ; I2C serial bus clock for SPD-TSE and register
+    [ SDA                |  285         |  Left     ]    ; I2C serial bus data line for SPD-TSE and register
+    [ VDD                |  204 206 209 212 215 217 220 223 226 229 231 233 236 59 61 64 67 70 76 80 83 85 88 90 92 73 | Up  ]  ; SDRAM core power supply min-typ-max(1.16, 1.21, 1.26)
+    [ VDDSPD             |  284         |  Up       ]  ; Serial SPD-TSE positive power supply 3.3V
+    [ VPP                |  286 287 288 142 143  | Up ]  ; SDRAM Supply min-typ-max(2.375, 2.5, 2.75)
+    [ VREFCA             |  146         |  Up       ]   ; SDRAM command/address reference supply
+    [ VSS                |  254 257 259 261 263 265 268 270 272 274 276 279 281 283 101 103 105 107 11 112 114 116 118 120 123 125 127 129 13 131 134 136 138 147 149 15 151 154 156 158 160 162 165 167 169 17 171 173 176 178 180 182 184 187 189 191 193 195 198 2 20 200 202 22 239 24 241 243 246 248 250 252 26 28 31 33 35 39 4 42 44 46 48 50 53 55 57 6 9 94 96 98 109 37 | Down ] ; Power supply return (ground)
+    [ VTT                |  221 77      |  Up       ] ; SDRAM I/O termination supply VDD/2.0 min-typ-max(0.565, 0.605, 0.640)
+    [ VDD12V             | 1            |  Up       ]
+
+  make-box-symbol()
+  assign-landpattern(DDR4-socket)
+
+  no-connect(self.NC)
+
+  property(self.VTT.power-pin) = PowerPin(min-typ-max(0.565, 0.605, 0.640))
+  ; property(self.VSS.power-pin) = PowerPin(typ(0.0))
+  property(self.VPP.power-pin) = PowerPin(min-typ-max(2.375, 2.5, 2.75))
+  property(self.VDDSPD.power-pin) = PowerPin(min-typ-max(2.41, 2.50, 2.75))
+  property(self.VDD.power-pin) = PowerPin(min-typ-max(1.16, 1.21, 1.26))
+  property(self.VTT.power-pin) = PowerPin(min-typ-max(0.565, 0.605, 0.640))
+  property(self.VREFCA.power-pin) = PowerPin(min-typ-max(1.205, 1.25, 1.375))
+
+  supports i2c:
+    i2c.scl => self.SCL
+    i2c.sda => self.SDA
+
+  supports reset:
+    reset.reset => self.RESET_n  
+
+  defn pin-match (obj:JITXObject, name:String) -> JITXObject|False:
+    for p in pins(obj) do:
+      if name == to-string(ref(p)):
+        p
+
+  supports DDR4-interface:
+    DDR4-interface.a[0]  => self.A0              
+    DDR4-interface.a[1]  => self.A1              
+    DDR4-interface.a[2]  => self.A2              
+    DDR4-interface.a[3]  => self.A3              
+    DDR4-interface.a[4]  => self.A4              
+    DDR4-interface.a[5]  => self.A5              
+    DDR4-interface.a[6]  => self.A6              
+    DDR4-interface.a[7]  => self.A7              
+    DDR4-interface.a[8]  => self.A8              
+    DDR4-interface.a[9]  => self.A9              
+    DDR4-interface.a[10]  => self.A10             
+    DDR4-interface.a[11]  => self.A11             
+    DDR4-interface.a[12]  => self.A12             
+    DDR4-interface.a[13]  => self.A13             
+    DDR4-interface.a[14]  => self.A14             
+    DDR4-interface.a[15]  => self.A15             
+    DDR4-interface.a[16]  => self.A16             
+    DDR4-interface.a[17]  => self.A17             
+    DDR4-interface.act_n  => self.ACT_n           
+    DDR4-interface.alert_n  => self.ALERT_n         
+    DDR4-interface.ba[0]  => self.BA0             
+    DDR4-interface.ba[1]  => self.BA1             
+    DDR4-interface.bg[0]  => self.BG0             
+    DDR4-interface.bg[1]  => self.BG1             
+    ; DDR4-interface.  => self.CB0             
+    ; DDR4-interface.  => self.CB1             
+    ; DDR4-interface.  => self.CB2             
+    ; DDR4-interface.  => self.CB3             
+    ; DDR4-interface.  => self.CB4             
+    ; DDR4-interface.  => self.CB5             
+    ; DDR4-interface.  => self.CB6             
+    ; DDR4-interface.  => self.CB7             
+    DDR4-interface.ck_c  => self.CK0_c           
+    DDR4-interface.ck_t  => self.CK0_t           
+    ; DDR4-interface.  => self.CK1_c           
+    ; DDR4-interface.  => self.CK1_t           
+    DDR4-interface.cke  => self.CKE0            
+    ; DDR4-interface.  => self.CKE1            
+    DDR4-interface.cs_n[0]  => self.CS0_n           
+    DDR4-interface.cs_n[1]  => self.CS1_n           
+    DDR4-interface.cs_n[2]  => self.CS2_n/C0        
+    DDR4-interface.cs_n[3]  => self.CS3_n/C1        
+    ; DDR4-interface.  => self.C2              
+    DDR4-interface.dq[0]  => self.DQ0             
+    DDR4-interface.dq[1]  => self.DQ1             
+    DDR4-interface.dq[2]  => self.DQ2             
+    DDR4-interface.dq[3]  => self.DQ3             
+    DDR4-interface.dq[4]  => self.DQ4             
+    DDR4-interface.dq[5]  => self.DQ5             
+    DDR4-interface.dq[6]  => self.DQ6             
+    DDR4-interface.dq[7]  => self.DQ7             
+    DDR4-interface.dq[8]  => self.DQ8             
+    DDR4-interface.dq[9]  => self.DQ9             
+    DDR4-interface.dq[10]  => self.DQ10            
+    DDR4-interface.dq[11]  => self.DQ11            
+    DDR4-interface.dq[12]  => self.DQ12            
+    DDR4-interface.dq[13]  => self.DQ13            
+    DDR4-interface.dq[14]  => self.DQ14            
+    DDR4-interface.dq[15]  => self.DQ15            
+    DDR4-interface.dq[16]  => self.DQ16            
+    DDR4-interface.dq[17]  => self.DQ17            
+    DDR4-interface.dq[18]  => self.DQ18            
+    DDR4-interface.dq[19]  => self.DQ19            
+    DDR4-interface.dq[20]  => self.DQ20            
+    DDR4-interface.dq[21]  => self.DQ21            
+    DDR4-interface.dq[22]  => self.DQ22            
+    DDR4-interface.dq[23]  => self.DQ23            
+    DDR4-interface.dq[24]  => self.DQ24            
+    DDR4-interface.dq[25]  => self.DQ25            
+    DDR4-interface.dq[26]  => self.DQ26            
+    DDR4-interface.dq[27]  => self.DQ27            
+    DDR4-interface.dq[28]  => self.DQ28            
+    DDR4-interface.dq[29]  => self.DQ29            
+    DDR4-interface.dq[30]  => self.DQ30            
+    DDR4-interface.dq[31]  => self.DQ31            
+    DDR4-interface.dq[32]  => self.DQ32            
+    DDR4-interface.dq[33]  => self.DQ33            
+    DDR4-interface.dq[34]  => self.DQ34            
+    DDR4-interface.dq[35]  => self.DQ35            
+    DDR4-interface.dq[36]  => self.DQ36            
+    DDR4-interface.dq[37]  => self.DQ37            
+    DDR4-interface.dq[38]  => self.DQ38            
+    DDR4-interface.dq[39]  => self.DQ39            
+    DDR4-interface.dq[40]  => self.DQ40            
+    DDR4-interface.dq[41]  => self.DQ41            
+    DDR4-interface.dq[42]  => self.DQ42            
+    DDR4-interface.dq[43]  => self.DQ43            
+    DDR4-interface.dq[44]  => self.DQ44            
+    DDR4-interface.dq[45]  => self.DQ45            
+    DDR4-interface.dq[46]  => self.DQ46            
+    DDR4-interface.dq[47]  => self.DQ47            
+    DDR4-interface.dq[48]  => self.DQ48            
+    DDR4-interface.dq[49]  => self.DQ49            
+    DDR4-interface.dq[50]  => self.DQ50            
+    DDR4-interface.dq[51]  => self.DQ51            
+    DDR4-interface.dq[52]  => self.DQ52            
+    DDR4-interface.dq[53]  => self.DQ53            
+    DDR4-interface.dq[54]  => self.DQ54            
+    DDR4-interface.dq[55]  => self.DQ55            
+    DDR4-interface.dq[56]  => self.DQ56            
+    DDR4-interface.dq[57]  => self.DQ57            
+    DDR4-interface.dq[58]  => self.DQ58            
+    DDR4-interface.dq[59]  => self.DQ59            
+    DDR4-interface.dq[60]  => self.DQ60            
+    DDR4-interface.dq[61]  => self.DQ61            
+    DDR4-interface.dq[62]  => self.DQ62            
+    DDR4-interface.dq[63]  => self.DQ63            
+    DDR4-interface.dqs_c[0]  => self.DQS0_c          
+    DDR4-interface.dqs_t[0]  => self.DQS0_t          
+    DDR4-interface.dqs_c[1]  => self.DQS1_c          
+    DDR4-interface.dqs_t[1]  => self.DQS1_t          
+    DDR4-interface.dqs_c[2]  => self.DQS2_c          
+    DDR4-interface.dqs_t[2]  => self.DQS2_t          
+    DDR4-interface.dqs_c[3]  => self.DQS3_c          
+    DDR4-interface.dqs_t[3]  => self.DQS3_t          
+    DDR4-interface.dqs_c[4]  => self.DQS4_c          
+    DDR4-interface.dqs_t[4]  => self.DQS4_t          
+    DDR4-interface.dqs_c[5]  => self.DQS5_c          
+    DDR4-interface.dqs_t[5]  => self.DQS5_t          
+    DDR4-interface.dqs_c[6]  => self.DQS6_c          
+    DDR4-interface.dqs_t[6]  => self.DQS6_t          
+    DDR4-interface.dqs_c[7]  => self.DQS7_c          
+    DDR4-interface.dqs_t[7]  => self.DQS7_t          
+    DDR4-interface.dqs_c[8]  => self.DQS8_c          
+    DDR4-interface.dqs_t[8]  => self.DQS8_t          
+    DDR4-interface.dqs_c[9]  => self.DQS9_c/TDQS9_c  
+    DDR4-interface.dqs_t[9]  => self.DQS9_t/TDQS9_t  
+    DDR4-interface.dqs_c[10]  => self.DQS10_c/TDQS10_c
+    DDR4-interface.dqs_t[10]  => self.DQS10_t/TDQS10_t
+    DDR4-interface.dqs_c[11]  => self.DQS11_c/TDQS11_c
+    DDR4-interface.dqs_t[11]  => self.DQS11_t/TDQS11_t
+    DDR4-interface.dqs_c[12]  => self.DQS12_c/TDQS12_c
+    DDR4-interface.dqs_t[12]  => self.DQS12_t/TDQS12_t
+    DDR4-interface.dqs_c[13]  => self.DQS13_c/TDQS13_c
+    DDR4-interface.dqs_t[13]  => self.DQS13_t/TDQ13_t 
+    DDR4-interface.dqs_c[14]  => self.DQS14_c/TDQS14_c
+    DDR4-interface.dqs_t[14]  => self.DQS14_t/TDQS14_t
+    DDR4-interface.dqs_c[15]  => self.DQS15_c/TDQS15_c
+    DDR4-interface.dqs_t[15]  => self.DQS15_t/TDQS15_t
+    DDR4-interface.dqs_c[16]  => self.DQS16_c/TDQS16_c
+    DDR4-interface.dqs_t[16]  => self.DQS16_t/TDQS16_t
+    DDR4-interface.dqs_c[17]  => self.DQS17_c/TDQS17_c
+    DDR4-interface.dqs_t[17]  => self.DQS17_t/TDQS17_t
+    DDR4-interface.event_n  => self.EVENT_n         
+    DDR4-interface.odt  => self.ODT0            
+    ; DDR4-interface.  => self.ODT1            
+    DDR4-interface.par  => self.PARITY          
+    DDR4-interface.reset_n  => self.RESET_n         
+    ; DDR4-interface.  => self.SA0             
+    ; DDR4-interface.  => self.SA1             
+    ; DDR4-interface.  => self.SA2             
+    ; DDR4-interface.  => self.SCL             
+    ; DDR4-interface.  => self.SDA             
+    ; DDR4-interface.  => self.VDD             
+    ; DDR4-interface.  => self.VDDSPD          
+    ; DDR4-interface.  => self.VPP             
+    ; DDR4-interface.  => self.VREFCA          
+    ; DDR4-interface.  => self.VSS             
+    ; DDR4-interface.  => self.VTT             
+    ; DDR4-interface.  => self.VDD12V          
+    
+
+    ; var addr-name:String
+    ; for i in 0 to 18 do:
+    ;   addr-name = to-string("A%_" % [i])
+    ;   println("addr %_" % [addr-name])
+    ;   val p = pin-match(self, addr-name)
+    ;   match(p:JITXObject) :
+    ;     DDR4-interface.A[i] => p
+    ;   else :
+    ;     println("No match")
+
+  
+  ; [  12 V                                     ; Optional Power Supply on socket but not used on RDIMM min-typ-max(10.2, 12.0, 13.8)
+  ; [  DM0_n-DM8_n                              ; Data Mask
+  ; [  DBI0_n-DBI8_n                            ; Data Bus Inversion 
+  ; [  RFU                                      ; Reserved for future use
+
+
+

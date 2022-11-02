@@ -15,6 +15,9 @@ defpackage chiplet-system :
   import ucie-utils
   import bow-utils
 
+  import DDR4-bundle
+  import DDR4-dimm
+
 ; ==========================================
 ; Implement other modules used by our design 
 ; ==========================================
@@ -22,7 +25,7 @@ defpackage chiplet-system :
 pcb-bundle system-io :
   port jtag : jtag()
   ; TODO upgrade to real DDR4 interface
-  port ddr4 : diff-pair
+  port ddr4 : DDR4-interface
 
 pcb-module compute-chiplet :
   port system-io : system-io
@@ -79,8 +82,8 @@ pcb-module hub-chiplet :
   net (uclane.ucie ucie)
 
   ; TODO upgrade to real DDR4 interface
-  inst ddr-interface : io-block(diff-pair, 55.0e-3)
-  place(ddr-interface) at loc(0.0, 0.0) on Top
+  inst ddr-interface : io-block(DDR4-interface, 9.0e-2)
+  place(ddr-interface) at loc(-2.0, 0.0) on Top
   net (ddr-interface.io system-io.ddr4)
 
   property(self.thickness) = 0.5
@@ -178,6 +181,23 @@ pcb-module board :
 
   inst board-interface : package-board-interface(0.6, Top)
   net (system-io board-interface.system-io)
+
+  inst dimm : DDR4-dimm/component[4]
+
+  place(dimm[0]) at loc(0.0, 15.0) on Top
+  place(dimm[1]) at loc(0.0, 23.0) on Top
+  place(dimm[2]) at loc(0.0, 31.0) on Top
+  place(dimm[3]) at loc(0.0, 39.0) on Top
+
+  require ddr4-0:DDR4-interface from dimm[0]
+  require ddr4-1:DDR4-interface from dimm[1]
+  require ddr4-2:DDR4-interface from dimm[2]
+  require ddr4-3:DDR4-interface from dimm[3]
+
+  net (system-io.ddr4 ddr4-0 ddr4-1 ddr4-2 ddr4-3)
+  net (dimm[0].VDD dimm[1].VDD dimm[2].VDD dimm[3].VDD) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
+  net (dimm[0].VPP dimm[1].VPP dimm[2].VPP dimm[3].VPP) ; PowerPin(min-typ-max(2.375, 2.5, 2.75))
+  net GND (dimm[0].VSS dimm[1].VSS dimm[2].VSS dimm[3].VSS) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
 
 ; When you run this:
 ;  - Design creation - look at schematics (package and board), bump patterns for chiplets
