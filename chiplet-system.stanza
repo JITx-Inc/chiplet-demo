@@ -22,7 +22,7 @@ defpackage chiplet-system :
 pcb-bundle system-io :
   port jtag : jtag()
   ; TODO upgrade to real DDR4 interface
-  port ddr4 : DDR4-interface()
+  port ddr4 : DDR4-interface
 
 pcb-module compute-chiplet :
   port system-io : system-io
@@ -74,7 +74,7 @@ pcb-module hub-chiplet :
   net (uclane.ucie ucie)
 
   ; TODO upgrade to real DDR4 interface
-  inst ddr-interface : io-block(diff-pair, 9.0e-2)
+  inst ddr-interface : io-block(DDR4-interface, 9.0e-2)
   place(ddr-interface) at loc(-2.0, 0.0) on Top
   net (ddr-interface.io system-io.ddr4)
 

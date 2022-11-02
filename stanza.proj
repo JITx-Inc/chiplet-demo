@@ -2,3 +2,6 @@ include "ocdb/stanza.proj"
 package ucie-utils defined-in "ucie-demo/ucie-utils.stanza"
 package ucie-rules defined-in "ucie-demo/ucie-rules.stanza"
 include "bow-demo/stanza.proj"
+
+package DDR4-bundle defined-in "ucie-demo/DDR4-bundle.stanza"
+package DDR4-dimm defined-in "ucie-demo/DDR4-dimm.stanza"
