@@ -19,7 +19,7 @@ public pcb-rules intel-build-up :
   max-board-height = 558.8
   min-silk-solder-mask-space = 0.001
   min-silkscreen-text-height = 0.007
-  solder-mask-registration = 0.005
+  solder-mask-registration = 1.0e-6
   min-th-pad-expand-outer = 0.002
   min-soldermask-opening = 0.0001 ; solder bridge - solder mask opening/expansion DIAMETER
   min-soldermask-bridge = 0.002 ; green

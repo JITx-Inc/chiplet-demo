@@ -247,14 +247,17 @@ val rx-data-sites = [
 
 defn calc-loc (pad-stem:String, sites, pitch:Double) :
   inside pcb-landpattern:
+    pcb-pad round-pad :
+      type = SMD
+      shape = Circle(pitch / 2.0)
     for [n [x y]] in sites do:
-      val ploc = loc(to-double(x) * pitch, to-double(y) * pitch)
+      val ploc = loc(to-double(x) * pitch - 11.0 * pitch, to-double(y) * pitch - 22.5 * pitch)
       val name = 
         if length(sites) > 1 :
           Ref(pad-stem)[n]
         else:
           Ref(pad-stem)
-      pad (name) : bga-pad(pitch / 4.0) at ploc
+      pad (name) : round-pad at ploc
 
 public pcb-landpattern ucie-bumps (type: ucie-utils/UCIE-PKGTYPE, pitch:Double) :
 
@@ -288,7 +291,7 @@ public pcb-landpattern ucie-bumps (type: ucie-utils/UCIE-PKGTYPE, pitch:Double) 
   calc-loc("txcksb", txcksb-sites, pitch)
   calc-loc("rxdatasb", rxdatasb-sites, pitch)
   calc-loc("txcksbRD", txcksbRD-sites, pitch)
-  layer(Courtyard(Top)) = Rectangle(11.0 * pitch, 46.0 * pitch, loc(4.5 * pitch, 22.5 * pitch))
+  layer(Courtyard(Top)) = Rectangle(11.0 * pitch, 46.0 * pitch, loc(-7.0 * pitch, 0.0))
 
 public pcb-component ucie-module (type:ucie-utils/UCIE-PKGTYPE, pitch:Double) :
   port ucie : UCIe-interface(type)

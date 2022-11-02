@@ -28,21 +28,21 @@ pcb-module compute-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst uclane : ucie-module(UCIe-Advanced, 9.0e-2)
+  inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
   net (uclane.ucie ucie)
 
-  inst hublane : ucie-module(UCIe-Advanced, 9.0e-2)
+  inst hublane : ucie-module(UCIe-Advanced, 22.0e-3)
   net (hublane.ucie ucie)
 
-  inst jtag-interface : io-block(jtag(), 9.0e-2)
+  inst jtag-interface : io-block(jtag(), 55.0e-3)
   net (jtag-interface.io system-io.jtag)
 
 
-  place(uclane) at loc(0.0, 0.0) on Top
-  place(hublane) at loc(2.0, 0.0) on Top
-  place(jtag-interface) at loc(-2.0, 0.0) on Top
+  place(uclane) at loc(1.0, 0.0) on Top
+  place(hublane) at loc(-0.75, 0.0) on Top
+  place(jtag-interface) at loc(-0.0, 0.0) on Top
 
-  property(self.shape) = Rectangle(5.0, 5.0)
+  property(self.shape) = Rectangle(2.0, 2.0)
   property(self.thickness) = 0.5
   property(self.PDK) = "Intel-18A"
   property(self.RTL) = "compute.vl" ; some model - composed of smaller models
@@ -54,12 +54,12 @@ pcb-module graphics-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst uclane : ucie-module(UCIe-Advanced, 7.0e-2)
-  place(uclane) at loc(0.0, 0.0) on Top
+  inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
+  place(uclane) at loc(1.0, 0.0) on Top
   net (uclane.ucie ucie)
 
   property(self.thickness) = 0.5
-  property(self.shape) = Rectangle(5.0, 5.0)
+  property(self.shape) = Rectangle(2.0, 2.0)
   property(self.PDK) = "Intel-4"
   property(self.RTL) = "graphics.vl" ; some model - composed of smaller models
   layer(Courtyard(Top)) = property(self.shape)
@@ -69,17 +69,17 @@ pcb-module hub-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst uclane : ucie-module(UCIe-Advanced, 7.0e-2)
-  place(uclane) at loc(0.0, 0.0) on Top
+  inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
+  place(uclane) at loc(-0.75, 0.0) on Top
   net (uclane.ucie ucie)
 
   ; TODO upgrade to real DDR4 interface
-  inst ddr-interface : io-block(diff-pair, 9.0e-2)
-  place(ddr-interface) at loc(-2.0, 0.0) on Top
+  inst ddr-interface : io-block(diff-pair, 55.0e-3)
+  place(ddr-interface) at loc(0.0, 0.0) on Top
   net (ddr-interface.io system-io.ddr4)
 
   property(self.thickness) = 0.5
-  property(self.shape) = Rectangle(5.0, 5.0)
+  property(self.shape) = Rectangle(2.0, 2.0)
   property(self.PDK) = "Intel-4"
   property(self.RTL) = "hub.vl" ; some model - composed of smaller models
   layer(Courtyard(Top)) = property(self.shape)
@@ -112,10 +112,15 @@ pcb-module interposer :
   net (compute.ucie graphics.ucie)
   net (compute.ucie hub.ucie)
 
-  inst package-interface : interposer-package-interface(0.2, Bottom)
+  inst package-interface : interposer-package-interface(300.0e-3, Bottom)
   net (package-interface.system-io compute.system-io graphics.system-io hub.system-io system-io)
 
+  place(compute) at loc(0.0, 0.0) on Top
+  place(graphics) at loc(-3.0, -0.5) on Top
+  place(hub) at loc(3.0, -0.5) on Top
   place(package-interface) at loc(0.0, 0.0) on Top
+  property(self.shape) = Rectangle(8.0, 7.0)
+
 
 pcb-landpattern package-lp (pitch:Double, side:Side):
   pcb-pad square-pad :
@@ -174,8 +179,8 @@ pcb-module my-design :
 ; ==========================================
 defn run-design (circuit:Instantiable, run-checks?:True|False) :
   set-design-directory("CAD")
-  set-board(ocdb/utils/defaults/default-board(ocdb/manufacturers/stackups/jlcpcb-jlc2313, board-shape))
-  set-rules(ocdb/manufacturers/rules/jlcpcb-rules)
+  set-board(ocdb/utils/defaults/default-board(ocdb/manufacturers/stackups/jlcpcb-jlc2313, property(circuit.shape)))
+  set-rules(ucie-rules/intel-build-up)
 
   var main-module = circuit
   if run-checks? :
