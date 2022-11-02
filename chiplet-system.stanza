@@ -53,10 +53,15 @@ pcb-module compute-chiplet :
 pcb-module graphics-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
+  port bow : bunch-of-wires-link(8, 8)
 
   inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
   place(uclane) at loc(1.0, 0.0) on Top
   net (uclane.ucie ucie)
+
+  inst bow-lane : bunch-of-wires-link-bumps(8, 8, 4, 22.0e-3, false)
+  place(bow-lane) at loc(0.0, -0.75, 180.0) on Top
+  net (bow-lane.io bow)
 
   property(self.thickness) = 0.5
   property(self.shape) = Rectangle(2.0, 2.0)
@@ -85,6 +90,22 @@ pcb-module hub-chiplet :
   layer(Courtyard(Top)) = property(self.shape)
   schematic-group(self) = hub
 
+pcb-module accelerator-chiplet :
+  port system-io : system-io
+  port bow : bunch-of-wires-link(8, 8)
+
+  inst bow-lane : bunch-of-wires-link-bumps(8, 8,  4, 22.0e-3, true)
+  place(bow-lane) at loc(0.0, 0.25) on Top
+  net (bow-lane.io bow)
+
+
+  property(self.thickness) = 0.5
+  property(self.shape) = Rectangle(2.0, 1.0)
+  property(self.PDK) = "Intel-4"
+  property(self.RTL) = "xl.vl" ; some model - composed of smaller models
+  layer(Courtyard(Top)) = property(self.shape)
+  schematic-group(self) = accelerator
+
 pcb-landpattern interposer-lp (pitch:Double, side:Side):
   pcb-pad square-pad :
     type = SMD
@@ -108,15 +129,18 @@ pcb-module interposer :
   inst compute : compute-chiplet
   inst graphics : graphics-chiplet
   inst hub : hub-chiplet
+  inst accelerator : accelerator-chiplet
 
   net (compute.ucie graphics.ucie)
   net (compute.ucie hub.ucie)
+  connect-bunch-of-wires(graphics.bow accelerator.bow)
 
   inst package-interface : interposer-package-interface(300.0e-3, Bottom)
   net (package-interface.system-io compute.system-io graphics.system-io hub.system-io system-io)
 
   place(compute) at loc(0.0, 0.0) on Top
   place(graphics) at loc(-3.0, -0.5) on Top
+  place(accelerator) at loc(-3.0, -2.5) on Top
   place(hub) at loc(3.0, -0.5) on Top
   place(package-interface) at loc(0.0, 0.0) on Top
   property(self.shape) = Rectangle(8.0, 7.0)
