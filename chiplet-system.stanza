@@ -15,6 +15,9 @@ defpackage chiplet-system :
   import ucie-utils
   import bow-utils
 
+  import DDR4-bundle
+  import DDR4-dimm
+
 ; ==========================================
 ; Implement other modules used by our design 
 ; ==========================================
