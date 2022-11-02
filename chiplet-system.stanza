@@ -22,7 +22,7 @@ defpackage chiplet-system :
 pcb-bundle system-io :
   port jtag : jtag()
   ; TODO upgrade to real DDR4 interface
-  port ddr4 : diff-pair
+  port ddr4 : DDR4-interface()
 
 pcb-module compute-chiplet :
   port system-io : system-io

@@ -1,0 +1,78 @@
+
+#use-added-syntax(jitx)
+defpackage ucie-utils :
+  import core
+  import math
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/utils/defaults
+  import ocdb/utils/generic-components
+  import ocdb/utils/bundles|
+  import ocdb/utils/landpatterns
+  import ocdb/utils/design-vars
+  import ocdb/utils/generator-utils
+  import ocdb/utils/checks
+  import ocdb/utils/box-symbol
+  import ocdb/utils/symbols
+  import ocdb/manufacturers/rules
+  import ocdb/utils/property-structs
+
+; https://docs.xilinx.com/r/en-US/ug583-ultrascale-pcb-design/DDR4-SDRAM-Interface-Signal-Description
+public pcb-bundle DDR4-interface ():
+  pin  ck_t
+  pin  ck_c
+  port a:pin[18]
+  pin  ras_n ; a[16]
+  pin  cas_n ; a[15]
+  pin  we_n  ; a[14]
+  port bg:pin[2]
+  port ba:pin[2]
+  pin  act_n
+  pin  par
+  pin  cke
+  port cs_n:pin[4] ; cs0_n, cs1_n, cs2_n, cs3_n
+  pin  odt
+  pin  reset_n
+  port dq:pin[80]
+  port dqs_t:pin[10]
+  port dqs_c:pin[10]
+  pin  dm_n
+  pin  dbi_n
+  pin  TEN
+  pin  alert_n
+  pin  VRP
+  pin  ZQ
+  
+
+
+
+; Clock Signals 
+; ck_t, ck_c | Differential clock
+
+; Address and Command Signals
+; a[17,13:0] | Address inputs
+; ras_n/a[16] | Row address strobe, address bit 16
+; cas_n/a[15] | Column address strobe, address bit 15
+; we_n/a[14] | Write enable, address bit 14
+; bg[1:0] | Bank group inputs
+; ba[1:0] | Bank address inputs
+; act_n | Activation command input
+; par | Command and address parity input
+
+; Control Signals
+; cke | Clock enable
+; cs_n[3:0] | Chip select
+; odt | On-die termination enable
+; reset_n | See reset_n
+
+; Data Signals
+; dq[79:0] | Data input/output
+; dqs_t/dqs_c[9:0] | Data strobe (differential)
+; dm_n/dbi_n | Data mask and data bus inversion
+
+; Other Signals
+; TEN | Test connectivity mode. CMOS level. Connect 500 Ω resistor to ground at memory devices.
+; alert_n | see alert_n
+; VRP (PL) | 240 Ω to GND
+; ZQ (PS) | 240 Ω to GND
