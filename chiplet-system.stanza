@@ -155,10 +155,10 @@ pcb-module board :
 
   inst dimm : DDR4-dimm/component[4]
 
-  place(dimm[0]) at loc(0.0,  6.5) on Top
-  place(dimm[1]) at loc(0.0, 13.0) on Top
-  place(dimm[2]) at loc(0.0, 19.5) on Top
-  place(dimm[3]) at loc(0.0, 26.0) on Top
+  place(dimm[0]) at loc(0.0, 15.0) on Top
+  place(dimm[1]) at loc(0.0, 23.0) on Top
+  place(dimm[2]) at loc(0.0, 31.0) on Top
+  place(dimm[3]) at loc(0.0, 39.0) on Top
 
   require ddr4-0:DDR4-interface from dimm[0]
   require ddr4-1:DDR4-interface from dimm[1]
