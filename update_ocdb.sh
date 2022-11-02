@@ -5,7 +5,8 @@
 # git subtree add -P ocdb ocdb main --squash
 #
 # run to update ocdb at will
-git subtree pull -P ocdb ocdb main --squash
+# git subtree pull -P ocdb ocdb main --squash
+git subtree pull -P ocdb ocdb dev --squash
 
 # rm -R open-components-database
 # git subtree add -P ocdb git@github.com:JITx-Inc/open-components-database.git main --squash
