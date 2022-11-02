@@ -153,6 +153,23 @@ pcb-module board :
   inst board-interface : package-board-interface(0.6, Top)
   net (system-io board-interface.system-io)
 
+  inst dimm : DDR4-dimm/component[4]
+
+  place(dimm[0]) at loc(0.0,  6.5) on Top
+  place(dimm[1]) at loc(0.0, 13.0) on Top
+  place(dimm[2]) at loc(0.0, 19.5) on Top
+  place(dimm[3]) at loc(0.0, 26.0) on Top
+
+  require ddr0:DDR4-interface from dimm[0]
+  require ddr1:DDR4-interface from dimm[1]
+  require ddr2:DDR4-interface from dimm[2]
+  require ddr3:DDR4-interface from dimm[3]
+
+  net (ddr0 ddr1 ddr2 ddr3)
+  net (dimm[0].VDD dimm[1].VDD dimm[2].VDD dimm[3].VDD) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
+  net (dimm[0].VPP dimm[1].VPP dimm[2].VPP dimm[3].VPP) ; PowerPin(min-typ-max(2.375, 2.5, 2.75))
+  net GND (dimm[0].VSS dimm[1].VSS dimm[2].VSS dimm[3].VSS) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
+
 ; When you run this:
 ;  - Design creation - look at schematics (package and board), bump patterns for chiplets
 ;  - Analysis (right now created in parallel -- new: need to have a common definition of the truth) Need story for all players in the design/analysis space.
