@@ -227,4 +227,4 @@ defn export-bill-of-materials () :
 ; ============
 ; Run the code
 ; ============
-compile-design(board)
+compile-design(interposer)
