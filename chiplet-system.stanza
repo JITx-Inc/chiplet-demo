@@ -170,6 +170,10 @@ pcb-module board :
   net (dimm[0].VPP dimm[1].VPP dimm[2].VPP dimm[3].VPP) ; PowerPin(min-typ-max(2.375, 2.5, 2.75))
   net GND (dimm[0].VSS dimm[1].VSS dimm[2].VSS dimm[3].VSS) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
 
+  schematic-group([dimm[0]]) = dimm0
+  schematic-group([dimm[1]]) = dimm1
+  schematic-group([dimm[2]]) = dimm2
+  schematic-group([dimm[3]]) = dimm3
 ; When you run this:
 ;  - Design creation - look at schematics (package and board), bump patterns for chiplets
 ;  - Analysis (right now created in parallel -- new: need to have a common definition of the truth) Need story for all players in the design/analysis space.
