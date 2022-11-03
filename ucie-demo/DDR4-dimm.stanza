@@ -197,7 +197,7 @@ public pcb-component component :
     [ DQS17_c/TDQS17_c   |  52          |  Right    ]
     [ DQS17_t/TDQS17_t   |  51          |  Right    ]
     [ EVENT_n            |  78          |  Right    ]   ; SPD signals a thermal event has occurred.
-    [ NC                 |  144 145 205 227 230 | Down ]
+    [ NC                 |  144 205 227 230 | Down ]
     [ ODT0               |  87          |  Left     ]    ; Register on-die termination control lines input 
     [ ODT1               |  91          |  Left     ]
     [ PARITY             |  222         |  Left     ]    ; Register parity input
@@ -213,7 +213,7 @@ public pcb-component component :
     [ VREFCA             |  146         |  Up       ]   ; SDRAM command/address reference supply
     [ VSS                |  254 257 259 261 263 265 268 270 272 274 276 279 281 283 101 103 105 107 11 112 114 116 118 120 123 125 127 129 13 131 134 136 138 147 149 15 151 154 156 158 160 162 165 167 169 17 171 173 176 178 180 182 184 187 189 191 193 195 198 2 20 200 202 22 239 24 241 243 246 248 250 252 26 28 31 33 35 39 4 42 44 46 48 50 53 55 57 6 9 94 96 98 109 37 | Down ] ; Power supply return (ground)
     [ VTT                |  221 77      |  Up       ] ; SDRAM I/O termination supply VDD/2.0 min-typ-max(0.565, 0.605, 0.640)
-    [ VDD12V             | 1            |  Up       ]
+    [ VDD12V             |  1 145       |  Up       ]
 
   make-box-symbol()
   assign-landpattern(DDR4-socket)
@@ -231,14 +231,6 @@ public pcb-component component :
   supports i2c:
     i2c.scl => self.SCL
     i2c.sda => self.SDA
-
-  supports reset:
-    reset.reset => self.RESET_n  
-
-  defn pin-match (obj:JITXObject, name:String) -> JITXObject|False:
-    for p in pins(obj) do:
-      if name == to-string(ref(p)):
-        p
 
   supports DDR4-interface:
     DDR4-interface.a[0]  => self.A0              
@@ -265,20 +257,20 @@ public pcb-component component :
     DDR4-interface.ba[1]  => self.BA1             
     DDR4-interface.bg[0]  => self.BG0             
     DDR4-interface.bg[1]  => self.BG1             
-    ; DDR4-interface.  => self.CB0             
-    ; DDR4-interface.  => self.CB1             
-    ; DDR4-interface.  => self.CB2             
-    ; DDR4-interface.  => self.CB3             
-    ; DDR4-interface.  => self.CB4             
-    ; DDR4-interface.  => self.CB5             
-    ; DDR4-interface.  => self.CB6             
-    ; DDR4-interface.  => self.CB7             
-    DDR4-interface.ck_c  => self.CK0_c           
-    DDR4-interface.ck_t  => self.CK0_t           
-    ; DDR4-interface.  => self.CK1_c           
-    ; DDR4-interface.  => self.CK1_t           
-    DDR4-interface.cke  => self.CKE0            
-    ; DDR4-interface.  => self.CKE1            
+    DDR4-interface.cb[0]  => self.CB0             
+    DDR4-interface.cb[1]  => self.CB1             
+    DDR4-interface.cb[2]  => self.CB2             
+    DDR4-interface.cb[3]  => self.CB3             
+    DDR4-interface.cb[4]  => self.CB4             
+    DDR4-interface.cb[5]  => self.CB5             
+    DDR4-interface.cb[6]  => self.CB6             
+    DDR4-interface.cb[7]  => self.CB7             
+    DDR4-interface.ck_c[0]  => self.CK0_c           
+    DDR4-interface.ck_t[0]  => self.CK0_t           
+    DDR4-interface.ck_c[1]  => self.CK1_c           
+    DDR4-interface.ck_t[1]  => self.CK1_t           
+    DDR4-interface.cke[0]  => self.CKE0            
+    DDR4-interface.cke[1]  => self.CKE1            
     DDR4-interface.cs_n[0]  => self.CS0_n           
     DDR4-interface.cs_n[1]  => self.CS1_n           
     DDR4-interface.cs_n[2]  => self.CS2_n/C0        
@@ -385,8 +377,8 @@ public pcb-component component :
     DDR4-interface.dqs_c[17]  => self.DQS17_c/TDQS17_c
     DDR4-interface.dqs_t[17]  => self.DQS17_t/TDQS17_t
     DDR4-interface.event_n  => self.EVENT_n         
-    DDR4-interface.odt  => self.ODT0            
-    ; DDR4-interface.  => self.ODT1            
+    DDR4-interface.odt[0]  => self.ODT0            
+    DDR4-interface.odt[1]  => self.ODT1            
     DDR4-interface.par  => self.PARITY          
     DDR4-interface.reset_n  => self.RESET_n         
     ; DDR4-interface.  => self.SA0             
@@ -412,12 +404,3 @@ public pcb-component component :
     ;     DDR4-interface.A[i] => p
     ;   else :
     ;     println("No match")
-
-  
-  ; [  12 V                                     ; Optional Power Supply on socket but not used on RDIMM min-typ-max(10.2, 12.0, 13.8)
-  ; [  DM0_n-DM8_n                              ; Data Mask
-  ; [  DBI0_n-DBI8_n                            ; Data Bus Inversion 
-  ; [  RFU                                      ; Reserved for future use
-
-
-
