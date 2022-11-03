@@ -1,0 +1,250 @@
+#use-added-syntax(jitx)
+defpackage components/STUSB4500QTR :
+  import core
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/utils/defaults
+  import ocdb/utils/symbols
+  import ocdb/utils/box-symbol
+
+  import ocdb/utils/landpatterns
+  import ocdb/utils/bundles
+  import ocdb/utils/generator-utils
+  import ocdb/utils/generic-components
+  import ocdb/utils/property-structs
+
+public pcb-component STL6P3LLH6 :
+  manufacturer = "STMicroelectronics"
+  description = "STL6P3LLH6"
+  pin G
+  pin D 
+  pin S
+
+  val pkg = SOT23()
+  val sym = fet-sym(FETPType, FETEnhancement, false)
+  landpattern = pkg(G => pkg.p[1], S => pkg.p[2], D => pkg.p[3])
+  symbol = sym(G => sym.g, D => sym.d, S => sym.s)
+  reference-prefix = "T"
+
+
+pcb-pad round-rect-smd-pad-1 :
+  type = SMD
+  shape = RoundedRectangle(1.09, 1.09, 0.25000022, loc(0.0, 0.0))
+  layer(Paste(Top)) = RoundedRectangle(1.09, 1.09, 0.25000022, loc(0.0, 0.0))
+
+pcb-pad round-rect-smd-pad-2 :
+  type = SMD
+  shape = RoundedRectangle(0.825, 0.25, 0.0625, loc(0.0, 0.0))
+  layer(Paste(Top)) = RoundedRectangle(0.825, 0.25, 0.0625, loc(0.0, 0.0))
+  layer(SolderMask(Top)) = RoundedRectangle(0.825, 0.25, 0.0625, loc(0.0, 0.0))
+
+pcb-pad round-rect-smd-pad-3 :
+  type = SMD
+  shape = RoundedRectangle(0.25, 0.825, 0.0625, loc(0.0, 0.0))
+  layer(Paste(Top)) = RoundedRectangle(0.25, 0.825, 0.0625, loc(0.0, 0.0))
+  layer(SolderMask(Top)) = RoundedRectangle(0.25, 0.825, 0.0625, loc(0.0, 0.0))
+
+pcb-pad rect-smd-pad :
+  type = SMD
+  shape = Rectangle(2.7, 2.7)
+  layer(SolderMask(Top)) = Rectangle(2.7, 2.7)
+
+public pcb-landpattern QFN-24-1EP_4x4mm_P05mm_EP27x27mm :
+  pad p[1] : round-rect-smd-pad-2 at loc(-1.9625, 1.25) on Top
+  pad p[2] : round-rect-smd-pad-2 at loc(-1.9625, 0.75) on Top
+  pad p[3] : round-rect-smd-pad-2 at loc(-1.9625, 0.25) on Top
+  pad p[4] : round-rect-smd-pad-2 at loc(-1.9625, -0.25) on Top
+  pad p[5] : round-rect-smd-pad-2 at loc(-1.9625, -0.75) on Top
+  pad p[6] : round-rect-smd-pad-2 at loc(-1.9625, -1.25) on Top
+  pad p[7] : round-rect-smd-pad-3 at loc(-1.25, -1.9625) on Top
+  pad p[8] : round-rect-smd-pad-3 at loc(-0.75, -1.9625) on Top
+  pad p[9] : round-rect-smd-pad-3 at loc(-0.25, -1.9625) on Top
+  pad p[10] : round-rect-smd-pad-3 at loc(0.25, -1.9625) on Top
+  pad p[11] : round-rect-smd-pad-3 at loc(0.75, -1.9625) on Top
+  pad p[12] : round-rect-smd-pad-3 at loc(1.25, -1.9625) on Top
+  pad p[13] : round-rect-smd-pad-2 at loc(1.9625, -1.25) on Top
+  pad p[14] : round-rect-smd-pad-2 at loc(1.9625, -0.75) on Top
+  pad p[15] : round-rect-smd-pad-2 at loc(1.9625, -0.25) on Top
+  pad p[16] : round-rect-smd-pad-2 at loc(1.9625, 0.25) on Top
+  pad p[17] : round-rect-smd-pad-2 at loc(1.9625, 0.75) on Top
+  pad p[18] : round-rect-smd-pad-2 at loc(1.9625, 1.25) on Top
+  pad p[19] : round-rect-smd-pad-3 at loc(1.25, 1.9625) on Top
+  pad p[20] : round-rect-smd-pad-3 at loc(0.75, 1.9625) on Top
+  pad p[21] : round-rect-smd-pad-3 at loc(0.25, 1.9625) on Top
+  pad p[22] : round-rect-smd-pad-3 at loc(-0.25, 1.9625) on Top
+  pad p[23] : round-rect-smd-pad-3 at loc(-0.75, 1.9625) on Top
+  pad p[24] : round-rect-smd-pad-3 at loc(-1.25, 1.9625) on Top
+  pad p[25] : rect-smd-pad at loc(0.0, 0.0) on Top
+
+  layer(Courtyard(Top)) = Polygon([
+    Point(2.62, 2.62), 
+    Point(-2.62, 2.62), 
+    Point(-2.62, -2.62), 
+    Point(2.62, -2.62)])
+  layer(Silkscreen("F-SilkS", Top)) = Text(">REF", 1.0, C, loc(0.0, 3.32, 90.0))
+  layer(Finish(Top)) = Text(">VALUE", 1.0, C, loc(0.0, -3.32, 90.0))
+  layer(Finish(Top)) = Text("${REFERENCE}", 1.0, C, loc(0.0, 0.0, 90.0))
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(2.11, 2.11), Point(2.11, 1.635)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(-1.635, 2.11), Point(-2.11, 2.11)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(-2.11, -2.11), Point(-2.11, -1.635)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(2.11, -2.11), Point(2.11, -1.635)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(1.635, -2.11), Point(2.11, -2.11)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(1.635, 2.11), Point(2.11, 2.11)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(-1.635, -2.11), Point(-2.11, -2.11)])
+  layer(Finish(Top)) = Line(0.1, [Point(2.0, -2.0), Point(-2.0, -2.0)])
+  layer(Finish(Top)) = Line(0.1, [Point(-2.0, -2.0), Point(-2.0, 1.0)])
+  layer(Finish(Top)) = Line(0.1, [Point(-1.0, 2.0), Point(2.0, 2.0)])
+  layer(Finish(Top)) = Line(0.1, [Point(2.0, 2.0), Point(2.0, -2.0)])
+  layer(Finish(Top)) = Line(0.1, [Point(-2.0, 1.0), Point(-1.0, 2.0)])
+
+public pcb-component component :
+  description = "STUSB4500QTR"
+  pin-properties :
+    [pin:Ref | pads:Ref ... | side:Dir | electrical-type:String]
+    [CC1DB | p[1] | Left | "Bidirectional"]
+    [GND[0] | p[10] | Down | "PowerIn"]
+    [ATTACH | p[11] | Right | "OpenCollector"]
+    [ADDR0 | p[12] | Left | "Input"]
+    [ADDR1 | p[13] | Left | "Input"]
+    [POWER_OK3 | p[14] | Right | "OpenCollector"]
+    [GPIO | p[15] | Right | "OpenCollector"]
+    [VBUS_EN_SNK | p[16] | Right | "OpenCollector"]
+    [A_B_SIDE | p[17] | Right | "OpenCollector"]
+    [VBUS_VS_DISCH | p[18] | Left | "Input"]
+    [ALERT | p[19] | Left | "OpenCollector"]
+    [CC1 | p[2] | Left | "Bidirectional"]
+    [POWER_OK2 | p[20] | Right | "OpenCollector"]
+    [VREG_1V2 | p[21] | Up | "PowerOut"]
+    [VSYS | p[22] | Up | "PowerIn"]
+    [VREG_2V7 | p[23] | Up | "PowerOut"]
+    [VDD | p[24] | Up | "PowerIn"]
+    [GND[1] | p[25] | Down | "Passive"]
+    [NC | p[3] | Left | "NoConnect"]
+    [CC2 | p[4] | Left | "Bidirectional"]
+    [CC2DB | p[5] | Left | "Bidirectional"]
+    [RESET | p[6] | Left | "Input"]
+    [SCL | p[7] | Left | "Input"]
+    [SDA | p[8] | Left | "Bidirectional"]
+    [DISCH | p[9] | Right | "Bidirectional"]
+
+  assign-landpattern(QFN-24-1EP_4x4mm_P05mm_EP27x27mm)
+  make-box-symbol()
+
+  supports i2c :
+    i2c.sda => self.SDA
+    i2c.scl => self.SCL
+  
+  val io = DigitalIO(logic-family-oc,
+                     typ(vil),
+                     typ(vih),
+                     vdd-pin, 
+                     gnd-pin,
+                     leakage-current) where : 
+    val logic-family-oc = OpenCollector(tol(3.3, 0.33), 10.0e-3)
+    val vil = 0.25 * 2.7
+    val vih = 0.75 * 2.7
+    val vdd-pin = self.VREG_2V7
+    val gnd-pin = self.GND
+    val leakage-current = 1.0e-7
+
+  val inp = DigitalInput(vil,
+                     vih,
+                     vdd-pin, 
+                     gnd-pin,
+                     leakage-current) where : 
+    val vil = typ(0.25 * 2.7)
+    val vih = typ(0.75 * 2.7)
+    val vdd-pin = self.VREG_2V7
+    val gnd-pin = self.GND
+    val leakage-current = 1.0e-7
+
+  property(self.VDD.power-pin) = PowerPin(tol(12.0, 0.33))
+  ; property(self.VDD.rail-voltage) = 12.0
+  property(self.SDA.digital-io) = io
+  property(self.SCL.digital-input) = inp
+  property(self.VREG_2V7.power-supply-pin) = PowerSupplyPin(typ(2.70), 0.15)
+  property(self.VREG_1V2.power-supply-pin) = PowerSupplyPin(typ(1.20), 0.15)
+  property(self.rated-temperature) = min-max(-20.0, 70.0)
+
+public pcb-module module :
+  pin SDA
+  pin SCL
+  pin GND
+  pin Vsnk
+  pin Vbus
+  pin CC1
+  pin CC2
+  pin VREG_2V7
+
+  public inst U1 : components/STUSB4500QTR/component
+  public inst T1 : components/STUSB4500QTR/STL6P3LLH6
+
+  property(T1.rated-temperature) = min-max(-40.0, 85.0)
+
+  net (GND U1.GND[0] U1.GND[1])
+  net (Vbus U1.VDD)
+
+  val r1 = res-strap(U1.VBUS_VS_DISCH Vbus 1.0e3)
+
+  property(r1.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced
+
+  net (CC1 U1.CC1 U1.CC1DB)
+  net (CC2 U1.CC2 U1.CC2DB)
+
+  net (GND U1.ADDR1 U1.ADDR0 U1.RESET)
+
+  ; property(U1.ALERT.NC) = true
+
+  net (SDA U1.SDA)
+  net (SCL U1.SCL)
+
+  ;property(U1.ATTACH.NC) = true
+  ;property(U1.A_B_SIDE.NC) = true
+  ;property(U1.POWER_OK2.NC) = true
+  ;property(U1.POWER_OK3.NC) = true
+  ;property(U1.GPIO.NC) = true
+
+  val c1 = cap-strap(U1.VREG_2V7 GND ["capacitance" => 1.0e-6 "min-rated-voltage" => 40.0])
+  val c2 = cap-strap(U1.VREG_1V2 GND ["capacitance" => 1.0e-6 "min-rated-voltage" => 40.0])
+  
+  property(c1.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-3)) ; peak-voltage, peak-current as Toleranced
+  property(c2.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-3)) ; peak-voltage, peak-current as Toleranced
+
+  net (GND U1.NC U1.VSYS)
+
+  net n1 ()
+  net n2 ()
+
+  val r10 = res-strap(Vbus n1 100.0e3)
+  val r11 = res-strap(n1 U1.VBUS_EN_SNK 22.0e3)
+  val r12 = res-strap(n1 n2 100.0)
+  val c12 = cap-strap(n2 Vsnk ["capacitance" => 100.0e-9 "min-rated-voltage" => 40.0])
+  val  r2 = res-strap(Vsnk U1.DISCH 1.0e3)
+
+  net (Vbus T1.S)
+  net (n1 T1.G)
+  net (Vsnk T1.D)
+
+  property(T1.D.rail-voltage) = 12.0
+  property(T1.D.power-supply-pin) = PowerSupplyPin(typ(12.0), 1.0)
+
+  property(r10.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced
+  property(r11.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced
+  property(r12.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced
+  property( r2.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced
+  property(c12.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-3)) ; peak-voltage, peak-current as Toleranced
+
+  public inst r-scl-pu : chip-resistor(1.0e3)
+  public inst r-sda-pu : chip-resistor(1.0e3)
+  property(r-scl-pu,.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced
+  property(r-sda-pu,.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 1.0e-6)) ; peak-voltage, peak-current as Toleranced  
+  net (SCL r-scl-pu.p[1])
+  net (SDA r-sda-pu.p[1])
+  net (r-sda-pu.p[2] r-scl-pu.p[2] VREG_2V7)
+
+  property(T1.power-supply-component) = true
+
+  net (VREG_2V7 U1.VREG_2V7)
+
+  schematic-group(self) = STUSB4500QTR/module

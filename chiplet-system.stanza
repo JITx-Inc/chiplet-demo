@@ -24,8 +24,8 @@ defpackage chiplet-system :
 
 pcb-bundle system-io :
   port jtag : jtag()
-  ; TODO upgrade to real DDR4 interface
   port ddr4 : DDR4-interface
+  port sys-i2c : i2c
 
 pcb-module compute-chiplet :
   port system-io : system-io
@@ -81,10 +81,13 @@ pcb-module hub-chiplet :
   place(uclane) at loc(-0.75, 0.0) on Top
   net (uclane.ucie ucie)
 
-  ; TODO upgrade to real DDR4 interface
-  inst ddr-interface : io-block(DDR4-interface, 9.0e-2)
-  place(ddr-interface) at loc(-2.0, 0.0) on Top
+  inst ddr-interface : io-block(DDR4-interface, 22.0e-3)
+  place(ddr-interface) at loc(0.0, 0.0) on Top
   net (ddr-interface.io system-io.ddr4)
+
+  inst i2c-interface : io-block(i2c, 22.0e-3)
+  place(i2c-interface) at loc(0.0, 0.5) on Top
+  net (i2c-interface.io system-io.sys-i2c)
 
   property(self.thickness) = 0.5
   property(self.shape) = Rectangle(2.0, 2.0)
@@ -155,6 +158,7 @@ pcb-landpattern package-lp (pitch:Double, side:Side):
     shape = Circle(pitch / 4.0)
   for (l in grid-locs(20, 20, pitch, pitch), i in 0 to false) do :
     pad p[i] : square-pad at l on side
+  layer(Courtyard(Top)) = Rectangle(20.0 * pitch, 20.0 * pitch)
 
 pcb-component package-board-interface (pitch:Double, side:Side):
   port system-io : system-io
@@ -175,52 +179,44 @@ pcb-module package :
 
   place(interposer-interface) at loc(0.0, 0.0) on Top
   place(board-interface) at loc(0.0, 0.0) on Top
+  property(self.shape) = RoundedRectangle(13.0, 13.0, 0.25)
+  schematic-group(interposer-interface) = interposer
+  schematic-group(board-interface) = board
+
 
 pcb-module board :
   port system-io : system-io
 
-  inst board-interface : package-board-interface(0.6, Top)
-  net (system-io board-interface.system-io)
+  inst IntelProc : package-board-interface(0.6, Top)
+  net (system-io IntelProc.system-io)
+
+  net GND ()
 
   inst dimm : DDR4-dimm/component[4]
+  for i in 0 to 4 do:
+    place(dimm[i]) at loc(0.0, to-double(i) * 9.0) on Top
+    require ddr : DDR4-interface from dimm[i]
+    net (system-io.ddr4 ddr)
+    net (dimm[0].VDD dimm[i].VDD)
+    net (dimm[0].VPP dimm[i].VPP)
+    net (GND dimm[i].VSS)
+    schematic-group(dimm[i]) = (Ref(to-string("DIMM-%_" % [i])))
 
-  place(dimm[0]) at loc(0.0, 15.0) on Top
-  place(dimm[1]) at loc(0.0, 23.0) on Top
-  place(dimm[2]) at loc(0.0, 31.0) on Top
-  place(dimm[3]) at loc(0.0, 39.0) on Top
+  inst P1V8 : components/ADP3336ARMZ/module(1.8)
+  inst P3V3 : components/ADP3336ARMZ/module(3.3)
 
-  require ddr4-0:DDR4-interface from dimm[0]
-  require ddr4-1:DDR4-interface from dimm[1]
-  require ddr4-2:DDR4-interface from dimm[2]
-  require ddr4-3:DDR4-interface from dimm[3]
+  inst J1 : ocdb/components/belfuse/SS-52400-003/component
+  inst USB-PD : components/STUSB4500QTR/module ; USB-C PD device
+  net (J1.vbus USB-PD.Vbus)
+  net (J1.CC1 USB-PD.CC1)
+  net (J1.CC2 USB-PD.CC2)
 
-  net (system-io.ddr4 ddr4-0 ddr4-1 ddr4-2 ddr4-3)
-  net (dimm[0].VDD dimm[1].VDD dimm[2].VDD dimm[3].VDD) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
-  net (dimm[0].VPP dimm[1].VPP dimm[2].VPP dimm[3].VPP) ; PowerPin(min-typ-max(2.375, 2.5, 2.75))
-  net GND (dimm[0].VSS dimm[1].VSS dimm[2].VSS dimm[3].VSS) ; PowerPin(min-typ-max(1.16, 1.21, 1.26))
+  require ctrl:i2c from USB-PD.U1
+  net (system-io.sys-i2c ctrl)
 
-  schematic-group([dimm[0]]) = dimm0
-  schematic-group([dimm[1]]) = dimm1
-  schematic-group([dimm[2]]) = dimm2
-  schematic-group([dimm[3]]) = dimm3
-; When you run this:
-;  - Design creation - look at schematics (package and board), bump patterns for chiplets
-;  - Analysis (right now created in parallel -- new: need to have a common definition of the truth) Need story for all players in the design/analysis space.
-    ; - Performance - Cycle accurate simulator. 
+  place(IntelProc) at loc(0.0, -15.0) on Top
+  property(self.shape) = RoundedRectangle(200.0, 70.0, 1.0)
 
-; Challenges
-; - We built tool for boards
-; - Don't have our own performance simulator, thermal engine. Would have to be connected up.
-
-  
-; =========================
-; Module to run as a design
-; ==========================
-val board-shape = RoundedRectangle(30.0, 18.5, 0.25)
-pcb-module my-design :
-
-  inst version-label  : ocdb/artwork/board-text/version-silkscreen("Version 0.0")
-  place(version-label) at loc(0.0, height(board-shape) / 2.0 - 1.0) on Bottom
   
 ; ==========================================
 ; Configure the design, then run or check it

@@ -5,3 +5,7 @@ include "bow-demo/stanza.proj"
 
 package DDR4-bundle defined-in "ucie-demo/DDR4-bundle.stanza"
 package DDR4-dimm defined-in "ucie-demo/DDR4-dimm.stanza"
+
+package components/AT25SL321-U defined-in "components/AT25SL321-U.stanza"
+package components/ADP3336ARMZ defined-in "components/ADP3336ARMZ.stanza"
+package components/STUSB4500QTR defined-in "components/STUSB4500QTR.stanza"

@@ -1,0 +1,138 @@
+#use-added-syntax(jitx)
+defpackage components/AT25SL321-U :
+  import core
+  import collections
+  import jitx
+  import jitx/commands
+  import ocdb/defaults
+  import ocdb/symbols
+  import ocdb/box-symbol
+
+  import ocdb/land-patterns
+  import ocdb/bundles
+  import ocdb/generator-utils
+  import ocdb/generic-components
+  import ocdb/tolerance
+  import ocdb/property-structs
+
+pcb-pad circle-smd-pad :
+  type = SMD
+  shape = Circle(0.1)
+  layer(Paste(Top)) = Circle(0.1)
+  layer(SolderMask(Top)) = Circle(0.1)
+
+public pcb-landpattern WLCSP-8_1551x2284mm_P05mm :
+  pad A1 : circle-smd-pad at loc(-0.25, 0.75) on Top
+  pad A2 : circle-smd-pad at loc(0.25, 0.75) on Top
+  pad B1 : circle-smd-pad at loc(-0.25, 0.25) on Top
+  pad B2 : circle-smd-pad at loc(0.25, 0.25) on Top
+  pad C1 : circle-smd-pad at loc(-0.25, -0.25) on Top
+  pad C2 : circle-smd-pad at loc(0.25, -0.25) on Top
+  pad D1 : circle-smd-pad at loc(-0.25, -0.75) on Top
+  pad D2 : circle-smd-pad at loc(0.25, -0.75) on Top
+
+  layer(Courtyard(Top)) = Polygon([
+    Point(-1.78, -2.15), 
+    Point(1.78, -2.15), 
+    Point(1.78, 2.15), 
+    Point(-1.78, 2.15)])
+  layer(Silkscreen("F-SilkS", Top)) = Text(">REF", 1.0, C, loc(0.0, 2.142, 90.0))
+  layer(Finish(Top)) = Text(">VALUE", 1.0, C, loc(0.0, -2.142, 90.0))
+  layer(Finish(Top)) = Text("${REFERENCE}", 0.36, C, loc(0.0, 0.0, 90.0))
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(-0.8855, -1.252), Point(-0.8855, 0.86425)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(0.8855, 1.252), Point(0.8855, -1.252)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(0.8855, -1.252), Point(-0.8855, -1.252)])
+  layer(Silkscreen("F-SilkS", Top)) = Line(0.12, [Point(-0.49775, 1.252), Point(0.8855, 1.252)])
+  layer(Finish(Top)) = Line(0.1, [Point(-0.38775, 1.142), Point(0.7755, 1.142)])
+  layer(Finish(Top)) = Line(0.1, [Point(0.7755, -1.142), Point(-0.7755, -1.142)])
+  layer(Finish(Top)) = Line(0.1, [Point(-0.7755, -1.142), Point(-0.7755, 0.75425)])
+  layer(Finish(Top)) = Line(0.1, [Point(-0.7755, 0.75425), Point(-0.38775, 1.142)])
+  layer(Finish(Top)) = Line(0.1, [Point(0.7755, 1.142), Point(0.7755, -1.142)])
+
+
+public pcb-component component :
+  description = "AT25SL321-U"
+  pin-properties :
+    [pin:Ref | pads:Ref ... | side:Dir | electrical-type:String]
+    [VCC | A1 | Up | "PowerIn"]
+    [nCS | A2 | Left | "Input"]
+    [nHOLDIO3 | B1 | Left | "Bidirectional"]
+    [IO1SO | B2 | Right | "Bidirectional"]
+    [SCK | C1 | Left | "Input"]
+    [nWPIO2 | C2 | Left | "Bidirectional"]
+    [SIIO0 | D1 | Left | "Bidirectional"]
+    [GND | D2 | Down | "PowerIn"]
+
+  assign-landpattern(WLCSP-8_1551x2284mm_P05mm)
+  make-box-symbol()
+
+  supports spi-peripheral() : 
+    spi-peripheral().sdi => self.SIIO0
+    spi-peripheral().sdo => self.IO1SO
+    spi-peripheral().sck => self.SCK
+    spi-peripheral().cs => self.nCS
+
+  val io = DigitalIO(logic-family,
+                     vil,
+                     vih,
+                     vdd-pin,
+                     gnd-pin,
+                     leakage-current) where : 
+    val logic-family = OpenCollector(tol(1.8 0.18), 2.5e-3)
+    val vil = 0.25 * 1.8
+    val vih = 0.75 * 1.8
+    val vdd-pin = self.VCC
+    val gnd-pin = self.GND
+    val leakage-current = 1.0e-7
+  
+  val inp = DigitalInput(vil,
+                     vih,
+                     vdd-pin,
+                     gnd-pin,
+                     leakage-current) where : 
+    val vil = 0.25 * 1.8
+    val vih = 0.75 * 1.8
+    val vdd-pin = self.VCC
+    val gnd-pin = self.GND
+    val leakage-current = 1.0e-7
+
+
+  property(self.VCC.power-pin) = PowerPin(tol(1.8, 0.18))
+  property(self.IO1SO.digital-io) = io
+  property(self.SIIO0.digital-io) = io
+  property(self.nCS.digital-input) = inp
+  property(self.SCK.digital-input) = inp
+
+  property(self.rated-temperature) = min-max(-40.0, 85.0)
+ 
+
+public pcb-module module :
+  pin VCC
+  pin nCS
+  pin IO1SO
+  pin SCK
+  pin SIIO0
+  pin GND
+
+  public inst U1 : intel-demo/AT25SL321-U/component
+
+  net (GND U1.GND)
+  net (VCC U1.VCC)
+  net (IO1SO U1.IO1SO)
+  net (SCK U1.SCK)
+  net (SIIO0 U1.SIIO0)
+  net (nCS U1.nCS)
+  
+
+  val cap = cap-strap(VCC GND ["capacitance" => 100.0e-9 "min-rated-voltage" => 40.0])
+  property(cap.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 10.0e-3)) ; peak-voltage, peak-current as Toleranced
+
+  public inst r1-pu : chip-resistor(1.0e3)
+  public inst r2-pu : chip-resistor(1.0e3)
+  property(r1-pu.operating-point) = OperatingPoint(min-max(0.0, 5.0), min-max(0.0, 2.0e-3)) ; peak-voltage, peak-current as Toleranced
+  property(r2-pu.operating-point) = OperatingPoint(min-max(0.0, 5.0), min-max(0.0, 2.0e-3)) ; peak-voltage, peak-current as Toleranced  
+  net (IO1SO r1-pu.p[1])
+  net (SIIO0 r2-pu.p[1])
+  net (r1-pu.p[2] r2-pu.p[2] VCC)
+
+  schematic-group(self) = AT25SL321-U/module
