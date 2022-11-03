@@ -20,30 +20,26 @@ defpackage DDR4-bundle :
 
 ; https://docs.xilinx.com/r/en-US/ug583-ultrascale-pcb-design/DDR4-SDRAM-Interface-Signal-Description
 public pcb-bundle DDR4-interface:
-  pin  ck_t
-  pin  ck_c
+  port ck_t:pin[2]
+  port ck_c:pin[2]
   port a:pin[18]
-;   pin  ras_n ; a[16]
-;   pin  cas_n ; a[15]
-;   pin  we_n  ; a[14]
+;   pin  ras_n ; a[16] ; these are aliased
+;   pin  cas_n ; a[15] ; these are aliased
+;   pin  we_n  ; a[14] ; these are aliased
   port bg:pin[2]
   port ba:pin[2]
   pin  act_n
   pin  par
-  pin  cke
+  port cke:pin[2]
   port cs_n:pin[4] ; cs0_n, cs1_n, cs2_n, cs3_n
-  pin  odt
+  port odt:pin[2]
   pin  reset_n
   port dq:pin[64]
   port dqs_t:pin[18]
   port dqs_c:pin[18]
-;   pin  dm_n
-;   pin  dbi_n
-;   pin  TEN
   pin  alert_n
-;   pin  VRP
-;   pin  ZQ
-  pin event_n
+  pin  event_n
+  port cb:pin[8] 
   
 
 
