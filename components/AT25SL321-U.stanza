@@ -4,16 +4,15 @@ defpackage components/AT25SL321-U :
   import collections
   import jitx
   import jitx/commands
-  import ocdb/defaults
-  import ocdb/symbols
-  import ocdb/box-symbol
+  import ocdb/utils/defaults
+  import ocdb/utils/symbols
+  import ocdb/utils/box-symbol
 
-  import ocdb/land-patterns
-  import ocdb/bundles
-  import ocdb/generator-utils
-  import ocdb/generic-components
-  import ocdb/tolerance
-  import ocdb/property-structs
+  import ocdb/utils/landpatterns
+  import ocdb/utils/bundles
+  import ocdb/utils/generator-utils
+  import ocdb/utils/generic-components
+  import ocdb/utils/property-structs
 
 pcb-pad circle-smd-pad :
   type = SMD
@@ -79,8 +78,8 @@ public pcb-component component :
                      gnd-pin,
                      leakage-current) where : 
     val logic-family = OpenCollector(tol(1.8 0.18), 2.5e-3)
-    val vil = 0.25 * 1.8
-    val vih = 0.75 * 1.8
+    val vil = typ(0.25 * 1.8)
+    val vih = typ(0.75 * 1.8)
     val vdd-pin = self.VCC
     val gnd-pin = self.GND
     val leakage-current = 1.0e-7
@@ -90,8 +89,8 @@ public pcb-component component :
                      vdd-pin,
                      gnd-pin,
                      leakage-current) where : 
-    val vil = 0.25 * 1.8
-    val vih = 0.75 * 1.8
+    val vil = typ(0.25 * 1.8)
+    val vih = typ(0.75 * 1.8)
     val vdd-pin = self.VCC
     val gnd-pin = self.GND
     val leakage-current = 1.0e-7
@@ -107,22 +106,16 @@ public pcb-component component :
  
 
 public pcb-module module :
+  port spi : spi-peripheral()
   pin VCC
-  pin nCS
-  pin IO1SO
-  pin SCK
-  pin SIIO0
   pin GND
 
-  public inst U1 : intel-demo/AT25SL321-U/component
+  public inst U1 : components/AT25SL321-U/component
 
   net (GND U1.GND)
   net (VCC U1.VCC)
-  net (IO1SO U1.IO1SO)
-  net (SCK U1.SCK)
-  net (SIIO0 U1.SIIO0)
-  net (nCS U1.nCS)
-  
+  require spi-p : spi-peripheral() from U1
+  net (spi spi-p)
 
   val cap = cap-strap(VCC GND ["capacitance" => 100.0e-9 "min-rated-voltage" => 40.0])
   property(cap.operating-point) = OperatingPoint(min-max(0.0, 12.0), min-max(0.0, 10.0e-3)) ; peak-voltage, peak-current as Toleranced
@@ -131,8 +124,8 @@ public pcb-module module :
   public inst r2-pu : chip-resistor(1.0e3)
   property(r1-pu.operating-point) = OperatingPoint(min-max(0.0, 5.0), min-max(0.0, 2.0e-3)) ; peak-voltage, peak-current as Toleranced
   property(r2-pu.operating-point) = OperatingPoint(min-max(0.0, 5.0), min-max(0.0, 2.0e-3)) ; peak-voltage, peak-current as Toleranced  
-  net (IO1SO r1-pu.p[1])
-  net (SIIO0 r2-pu.p[1])
+  net (U1.IO1SO r1-pu.p[1])
+  net (U1.SIIO0 r2-pu.p[1])
   net (r1-pu.p[2] r2-pu.p[2] VCC)
 
   schematic-group(self) = AT25SL321-U/module

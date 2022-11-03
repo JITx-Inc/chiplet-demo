@@ -17,7 +17,13 @@ defpackage bow-utils :
   import ocdb/manufacturers/rules
 
 pcb-landpattern io-bumps (n:Int, pitch:Double):
-  make-bga-landpattern(8, (n / 4 + 1), pitch, pitch / 2.0, typ(0.0) typ(0.0) StaggeredMatrix())
+  ; make-bga-landpattern(8, (n / 4 + 1), pitch, pitch / 2.0, typ(0.0) typ(0.0) StaggeredMatrix())
+  pcb-pad square-pad :
+    type = SMD
+    shape = Rectangle(pitch / 2.0, pitch / 2.0)
+  for (l in grid-locs(4, (n / 4 + 1), pitch, pitch), i in 0 to false) do :
+    pad p[i] : square-pad at l on Top
+
 
 public pcb-component io-block (interface:PortType, pitch:Double) :
   port io : interface

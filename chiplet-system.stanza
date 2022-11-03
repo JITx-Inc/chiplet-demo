@@ -8,6 +8,7 @@ defpackage chiplet-system :
   import ocdb/utils/generic-components
 
   import ocdb/utils/bundles
+  import ocdb/utils/connects
 
   import ocdb/utils/landpatterns
   import ocdb/utils/box-symbol
@@ -18,15 +19,17 @@ defpackage chiplet-system :
   import DDR4-bundle
   import DDR4-dimm
 
-; ==========================================
-; Implement other modules used by our design 
-; ==========================================
-
+; ================================
+; Collection of system connections
+; ================================
 pcb-bundle system-io :
   port jtag : jtag()
   port ddr4 : DDR4-interface
   port sys-i2c : i2c
 
+; ================================
+; Chiplet definitions
+; ================================
 pcb-module compute-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
@@ -39,7 +42,6 @@ pcb-module compute-chiplet :
 
   inst jtag-interface : io-block(jtag(), 55.0e-3)
   net (jtag-interface.io system-io.jtag)
-
 
   place(uclane) at loc(1.0, 0.0) on Top
   place(hublane) at loc(-0.75, 0.0) on Top
@@ -104,13 +106,17 @@ pcb-module accelerator-chiplet :
   place(bow-lane) at loc(0.0, 0.25) on Top
   net (bow-lane.io bow)
 
-
   property(self.thickness) = 0.5
   property(self.shape) = Rectangle(2.0, 1.0)
   property(self.PDK) = "Intel-4"
   property(self.RTL) = "xl.vl" ; some model - composed of smaller models
   layer(Courtyard(Top)) = property(self.shape)
   schematic-group(self) = accelerator
+
+
+; ================================
+; Interposer definition
+; ================================
 
 pcb-landpattern interposer-lp (pitch:Double, side:Side):
   pcb-pad square-pad :
@@ -152,6 +158,10 @@ pcb-module interposer :
   property(self.shape) = Rectangle(8.0, 7.0)
 
 
+; ================================
+; Package definition
+; ================================
+
 pcb-landpattern package-lp (pitch:Double, side:Side):
   pcb-pad square-pad :
     type = SMD
@@ -184,6 +194,10 @@ pcb-module package :
   schematic-group(board-interface) = board
 
 
+; ================================
+; Board definitions
+; ================================
+
 pcb-module board :
   port system-io : system-io
 
@@ -213,6 +227,8 @@ pcb-module board :
 
   require ctrl:i2c from USB-PD.U1
   net (system-io.sys-i2c ctrl)
+
+  inst flash : components/AT25SL321-U/module
 
   place(IntelProc) at loc(0.0, -15.0) on Top
   property(self.shape) = RoundedRectangle(200.0, 70.0, 1.0)
@@ -276,4 +292,4 @@ defn export-bill-of-materials () :
 ; ============
 ; Run the code
 ; ============
-compile-design(interposer)
+compile-design(compute-chiplet)
