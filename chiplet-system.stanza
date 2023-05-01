@@ -238,7 +238,7 @@ pcb-module board :
 ; Configure the design, then run or check it
 ; ==========================================
 defn run-design (circuit:Instantiable, run-checks?:True|False) :
-  set-design-directory("CAD")
+  set-current-design("chiplet-design-output")
   set-board(ocdb/utils/defaults/default-board(ocdb/manufacturers/stackups/jlcpcb-jlc2313, property(circuit.shape)))
   set-rules(ucie-rules/intel-build-up)
 
