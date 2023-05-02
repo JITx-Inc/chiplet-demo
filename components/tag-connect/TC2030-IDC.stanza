@@ -41,6 +41,7 @@ pcb-landpattern TC2030-IDC-footprint :
 
 public pcb-component component :
   description = "Insertion point for TC-2030 connector"
+  datasheet = "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/2019/12/TC2030-IDC-Datasheet-Rev-B.pdf"
   manufacturer = "Tag-Connect"
   mpn = "TC2030-IDC"
   property(self.trust) = "built"
@@ -50,6 +51,8 @@ public pcb-component component :
   symbol = sym(for i in 1 through 6 do : p[i] => sym.p[i])
   landpattern = TC2030-IDC-footprint(for i in 1 through 6 do : p[i] => TC2030-IDC-footprint.p[i])
   reference-prefix = "J"
+
+  property(self.rated-temperature) = false
 
   supports swd([SWD-SWO, SWD-TRACESWO]) :
     swd([SWD-SWO, SWD-TRACESWO]).swdio  => self.p[2]

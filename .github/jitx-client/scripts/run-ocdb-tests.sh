@@ -27,7 +27,7 @@ cd ..
 #==============================================
 
 echo "Searching for pcb objects and generating tests..."
-python3.8 scripts/evaluate_pcb_objects.py
+python3.10 scripts/evaluate_pcb_objects.py
 cd test-evaluate/
 echo "Launching pcb object tests..."
 $JITX_RUN_TEST test/evaluate/api
@@ -39,7 +39,7 @@ cd ..
 
 echo "Launching ocdb tests, they can depend on jitx-client..."
 cd open-components-database
-$JITX_RUN_TEST tests/all.stanza -not-tagged part-query long
+$JITX_RUN_TEST tests/all.stanza -not-tagged part-query long not-implemented-yet
 cd ..
 
 #==============================================
