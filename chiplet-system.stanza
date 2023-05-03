@@ -34,20 +34,20 @@ pcb-module compute-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
+  inst uclane : ucie-module(UCIe-Advanced, 220.0e-3)
   net (uclane.ucie ucie)
 
-  inst hublane : ucie-module(UCIe-Advanced, 22.0e-3)
+  inst hublane : ucie-module(UCIe-Advanced, 220.0e-3)
   net (hublane.ucie ucie)
 
-  inst jtag-interface : io-block(jtag(), 55.0e-3)
+  inst jtag-interface : io-block(jtag(), 550.0e-3)
   net (jtag-interface.io system-io.jtag)
 
-  place(uclane) at loc(1.0, 0.0) on Top
-  place(hublane) at loc(-0.75, 0.0) on Top
+  place(uclane) at loc(10.0, 0.0) on Top
+  place(hublane) at loc(-7.5, 0.0) on Top
   place(jtag-interface) at loc(-0.0, 0.0) on Top
 
-  property(self.shape) = Rectangle(2.0, 2.0)
+  property(self.shape) = Rectangle(20.0, 20.0)
   property(self.thickness) = 0.5
   property(self.PDK) = "Intel-18A"
   property(self.RTL) = "compute.vl" ; some model - composed of smaller models
@@ -60,16 +60,16 @@ pcb-module graphics-chiplet :
   port ucie : UCIe-interface(UCIe-Advanced)
   port bow : bunch-of-wires-link(8, 8)
 
-  inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
-  place(uclane) at loc(1.0, 0.0) on Top
+  inst uclane : ucie-module(UCIe-Advanced, 220.0e-3)
+  place(uclane) at loc(10.0, 0.0) on Top
   net (uclane.ucie ucie)
 
-  inst bow-lane : bunch-of-wires-link-bumps(8, 8, 4, 22.0e-3, false)
-  place(bow-lane) at loc(0.0, -0.75, 180.0) on Top
+  inst bow-lane : bunch-of-wires-link-bumps(8, 8, 4, 220.0e-3, false)
+  place(bow-lane) at loc(0.0, -7.50, 180.0) on Top
   net (bow-lane.io bow)
 
   property(self.thickness) = 0.5
-  property(self.shape) = Rectangle(2.0, 2.0)
+  property(self.shape) = Rectangle(20.0, 20.0)
   property(self.PDK) = "Intel-4"
   property(self.RTL) = "graphics.vl" ; some model - composed of smaller models
   layer(Courtyard(Top)) = property(self.shape)
@@ -79,20 +79,20 @@ pcb-module hub-chiplet :
   port system-io : system-io
   port ucie : UCIe-interface(UCIe-Advanced)
 
-  inst uclane : ucie-module(UCIe-Advanced, 22.0e-3)
-  place(uclane) at loc(-0.75, 0.0) on Top
+  inst uclane : ucie-module(UCIe-Advanced, 220.0e-3)
+  place(uclane) at loc(-7.5, 0.0) on Top
   net (uclane.ucie ucie)
 
-  inst ddr-interface : io-block(DDR4-interface, 22.0e-3)
+  inst ddr-interface : io-block(DDR4-interface, 220.0e-3)
   place(ddr-interface) at loc(0.0, 0.0) on Top
   net (ddr-interface.io system-io.ddr4)
 
-  inst i2c-interface : io-block(i2c, 22.0e-3)
+  inst i2c-interface : io-block(i2c, 220.0e-3)
   place(i2c-interface) at loc(0.0, 0.5) on Top
   net (i2c-interface.io system-io.sys-i2c)
 
   property(self.thickness) = 0.5
-  property(self.shape) = Rectangle(2.0, 2.0)
+  property(self.shape) = Rectangle(20.0, 20.0)
   property(self.PDK) = "Intel-4"
   property(self.RTL) = "hub.vl" ; some model - composed of smaller models
   layer(Courtyard(Top)) = property(self.shape)
@@ -102,12 +102,12 @@ pcb-module accelerator-chiplet :
   port system-io : system-io
   port bow : bunch-of-wires-link(8, 8)
 
-  inst bow-lane : bunch-of-wires-link-bumps(8, 8,  4, 22.0e-3, true)
-  place(bow-lane) at loc(0.0, 0.25) on Top
+  inst bow-lane : bunch-of-wires-link-bumps(8, 8,  4, 220.0e-3, true)
+  place(bow-lane) at loc(0.0, 2.5) on Top
   net (bow-lane.io bow)
 
   property(self.thickness) = 0.5
-  property(self.shape) = Rectangle(2.0, 1.0)
+  property(self.shape) = Rectangle(20.0, 10.0)
   property(self.PDK) = "Intel-4"
   property(self.RTL) = "xl.vl" ; some model - composed of smaller models
   layer(Courtyard(Top)) = property(self.shape)
@@ -151,11 +151,11 @@ pcb-module interposer :
   net (package-interface.system-io compute.system-io graphics.system-io hub.system-io system-io)
 
   place(compute) at loc(0.0, 0.0) on Top
-  place(graphics) at loc(-3.0, -0.5) on Top
-  place(accelerator) at loc(-3.0, -2.5) on Top
-  place(hub) at loc(3.0, -0.5) on Top
+  place(graphics) at loc(-30.0, -5.0) on Top
+  place(accelerator) at loc(-30.0, -25.0) on Top
+  place(hub) at loc(30.0, -5.0) on Top
   place(package-interface) at loc(0.0, 0.0) on Top
-  property(self.shape) = Rectangle(8.0, 7.0)
+  property(self.shape) = Rectangle(80.0, 70.0)
 
 
 ; ================================
@@ -189,7 +189,7 @@ pcb-module package :
 
   place(interposer-interface) at loc(0.0, 0.0) on Top
   place(board-interface) at loc(0.0, 0.0) on Top
-  property(self.shape) = RoundedRectangle(13.0, 13.0, 0.25)
+  property(self.shape) = RoundedRectangle(130.0, 130.0, 0.25)
   schematic-group(interposer-interface) = interposer
   schematic-group(board-interface) = board
 
