@@ -1,0 +1,93 @@
+#use-added-syntax(jitx)
+defpackage channel-example :
+  import core
+  import jitx
+  import jitx/commands
+  import ocdb/utils/checks
+  import ocdb/utils/generic-components
+
+  import ocdb/utils/bundles
+  import ocdb/utils/connects
+
+  import ocdb/utils/landpatterns
+  import ocdb/utils/box-symbol
+  
+  import ucie-utils
+  import bow-utils
+
+  import DDR4-bundle
+  import DDR4-dimm
+
+pcb-symbol buffer :
+  pin in at unit-point(0.0, 1.0)
+  pin out at unit-point(0.0, -1.0)
+  unit-line([[0.0, 1.0], [0.0, 0.4]])
+  unit-triangle([0.0, 0.4], [0.0, -0.4], 1.0)
+  unit-line([[0.0, -0.4], [0.0, -1.0]])  
+  unit-ref([1.0, 0.5])
+  unit-val([1.0, -0.5])
+
+pcb-symbol flop (neg:True|False) :
+    pin d at unit-point()
+    pin q at unit-point()
+    pin clk at unit-point()
+
+    if neg :
+      unit-circle([0.0, 0.0], 0.1)
+    else :
+      unit-line([0.0, 0.0] [0.0, 0.1])
+    unit-rectangle(0.8, 1.5)
+    unit-triangle([-0.1 0.1] [0.1 0.1] 0.2)
+
+pcb-symbol trace :
+  pin in at unit-point(-2.0, 0.0)
+  pin out at unit-point(2.0, 0.0)
+
+  unit-line([-2.0, 0.1] [2.0, 0.1])
+  unit-line([-2.0, -0.1] [2.0, -0.1])
+  unit-circle([-2.0, 0.0] 0.1)
+  unit-circle([ 2.0, 0.0] 0.1)
+
+
+pcb-component flop (bar-clk:True|False = false) :
+  pin d
+  pin q
+  pin clk  
+  mpn          = flop
+  manufacturer = Intel
+  description  = Flipflop  
+  val sym = flop(bar-clk)
+  symbol = sym(d => sym.d, q => sym.q, clk => sym.clk)  
+  spice :
+    ".SUBCKT [flop] 1 2 3 4"
+    ".ENDS"
+    "[Xflop] <d> <q> <vdd> <gnd>"
+
+pcb-component driver :
+  pin in
+  pin out
+
+  mpn          = driver
+  manufacturer = Intel
+  description  = Signal driver
+
+  val sym = buffer
+  symbol = sym(in => sym.in, out => sym.out)
+
+  spice :
+    ".SUBCKT [driver] 1 2 3 4"
+    ".ENDS" 
+
+pcb-component pcb-line :
+  pin in
+  pin out
+
+  mpn = cable
+  manufacturer = Intel
+  description = trace model for board
+
+  val sym = trace
+  symbol = sym(in => sym.in, out => sym.out)
+
+  spice :
+    "
